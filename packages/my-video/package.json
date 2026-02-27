@@ -1,0 +1,29 @@
+{
+	"name": "my-video",
+	"version": "1.0.0",
+	"private": true,
+	"description": "A Remotion video project",
+	"scripts": {
+		"dev": "remotion studio",
+		"build": "remotion bundle",
+		"render": "remotion render MyVideo out/video.mp4",
+		"upgrade": "remotion upgrade",
+		"lint": "eslint src && tsc"
+	},
+	"dependencies": {
+		"@remotion/cli": "workspace:*",
+		"@remotion/zod-types": "workspace:*",
+		"react": "catalog:",
+		"react-dom": "catalog:",
+		"remotion": "workspace:*",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@remotion/eslint-config-flat": "workspace:*",
+		"@types/react": "catalog:",
+		"@types/web": "catalog:",
+		"eslint": "catalog:",
+		"prettier": "catalog:",
+		"typescript": "5.9.3"
+	}
+}
