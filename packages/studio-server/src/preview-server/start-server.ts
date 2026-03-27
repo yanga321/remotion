@@ -1,5 +1,11 @@
+import type {IncomingMessage} from 'node:http';
+import http from 'node:http';
 import type {WebpackOverrideFn} from '@remotion/bundler';
-import {BundlerInternals, webpack} from '@remotion/bundler';
+import {
+	BundlerInternals,
+	WatchIgnoreNextChangePlugin,
+	webpack,
+} from '@remotion/bundler';
 import type {LogLevel} from '@remotion/renderer';
 import {RenderInternals} from '@remotion/renderer';
 import type {
@@ -7,14 +13,27 @@ import type {
 	RenderDefaults,
 	RenderJob,
 } from '@remotion/studio-shared';
-import type {IncomingMessage} from 'node:http';
-import http from 'node:http';
+import {detectRemotionServer} from '../detect-remotion-server';
 import {handleRoutes} from '../routes';
 import type {QueueMethods} from './api-types';
 import {wdm} from './dev-middleware';
-import {webpackHotMiddleware} from './hot-middleware';
+import {setupWebpackHmr} from './hot-middleware';
 import type {LiveEventsServer} from './live-events';
 import {makeLiveEventsRouter} from './live-events';
+import {getRedoStack, getUndoStack} from './undo-stack';
+import {setWatchIgnoreNextChangePlugin} from './watch-ignore-next-change';
+
+export type StartServerResult =
+	| {
+			type: 'started';
+			port: number;
+			liveEventsServer: LiveEventsServer;
+			close: () => Promise<void>;
+	  }
+	| {
+			type: 'already-running';
+			port: number;
+	  };
 
 export const startServer = async (options: {
 	entry: string;
@@ -28,6 +47,7 @@ export const startServer = async (options: {
 	remotionRoot: string;
 	keyboardShortcutsEnabled: boolean;
 	experimentalClientSideRenderingEnabled: boolean;
+	experimentalVisualModeEnabled: boolean;
 	publicDir: string;
 	poll: number | null;
 	staticHash: string;
@@ -45,33 +65,77 @@ export const startServer = async (options: {
 	audioLatencyHint: AudioContextLatencyCategory | null;
 	enableCrossSiteIsolation: boolean;
 	askAIEnabled: boolean;
-}): Promise<{
-	port: number;
-	liveEventsServer: LiveEventsServer;
-	close: () => Promise<void>;
-}> => {
-	const [, config] = await BundlerInternals.webpackConfig({
+	forceNew: boolean;
+	rspack: boolean;
+}): Promise<StartServerResult> => {
+	const desiredPort =
+		options?.port ??
+		(process.env.PORT ? Number(process.env.PORT) : undefined) ??
+		undefined;
+
+	const portConfig = RenderInternals.getPortConfig(options.forceIPv4);
+
+	const onPortUnavailable = options.forceNew
+		? undefined
+		: async (port: number): Promise<'continue' | 'stop'> => {
+				const detection = await detectRemotionServer({
+					port,
+					cwd: options.remotionRoot,
+					hostname: portConfig.hostsToTry[0],
+				});
+				return detection.type === 'match' ? 'stop' : 'continue';
+			};
+
+	const watchIgnorePlugin = new WatchIgnoreNextChangePlugin((...args) => {
+		RenderInternals.Log.trace(
+			{indent: false, logLevel: options.logLevel},
+			...args,
+		);
+	});
+
+	const configArgs = {
 		entry: options.entry,
 		userDefinedComponent: options.userDefinedComponent,
 		outDir: null,
-		environment: 'development',
+		environment: 'development' as const,
 		webpackOverride: options?.webpackOverride,
 		maxTimelineTracks: options?.maxTimelineTracks ?? null,
 		remotionRoot: options.remotionRoot,
 		keyboardShortcutsEnabled: options.keyboardShortcutsEnabled,
 		experimentalClientSideRenderingEnabled:
 			options.experimentalClientSideRenderingEnabled,
+		experimentalVisualModeEnabled: options.experimentalVisualModeEnabled,
 		poll: options.poll,
 		bufferStateDelayInMilliseconds: options.bufferStateDelayInMilliseconds,
 		askAIEnabled: options.askAIEnabled,
-	});
+		extraPlugins: [watchIgnorePlugin],
+	};
 
-	const compiler = webpack(config);
+	let compiler: webpack.Compiler;
+	if (options.rspack) {
+		const [, rspackConf] = await BundlerInternals.rspackConfig(configArgs);
+		compiler = BundlerInternals.createRspackCompiler(
+			rspackConf,
+		) as unknown as webpack.Compiler;
+	} else {
+		const [, webpackConf] = await BundlerInternals.webpackConfig(configArgs);
+		compiler = webpack(webpackConf);
+	}
+
+	setWatchIgnoreNextChangePlugin(watchIgnorePlugin);
 
 	const wdmMiddleware = wdm(compiler, options.logLevel);
-	const whm = webpackHotMiddleware(compiler, options.logLevel);
-
-	const liveEventsServer = makeLiveEventsRouter(options.logLevel);
+	const liveEventsServer = makeLiveEventsRouter(options.logLevel, () => {
+		const undoStack = getUndoStack();
+		const redoStack = getRedoStack();
+		return {
+			undoFile:
+				undoStack.length > 0 ? undoStack[undoStack.length - 1].filePath : null,
+			redoFile:
+				redoStack.length > 0 ? redoStack[redoStack.length - 1].filePath : null,
+		};
+	});
+	setupWebpackHmr(compiler, options.logLevel, liveEventsServer);
 
 	const server = http.createServer((request, response) => {
 		if (options.enableCrossSiteIsolation) {
@@ -84,13 +148,6 @@ export const startServer = async (options: {
 				resolve();
 			});
 		})
-			.then(() => {
-				return new Promise<void>((resolve) => {
-					whm(request as IncomingMessage, response, () => {
-						resolve();
-					});
-				});
-			})
 			.then(() => {
 				return handleRoutes({
 					staticHash: options.staticHash,
@@ -137,44 +194,55 @@ export const startServer = async (options: {
 			});
 	});
 
-	const desiredPort =
-		options?.port ??
-		(process.env.PORT ? Number(process.env.PORT) : undefined) ??
-		undefined;
-
 	const maxTries = 5;
-
-	const portConfig = RenderInternals.getPortConfig(options.forceIPv4);
 
 	for (let i = 0; i < maxTries; i++) {
 		try {
-			const selectedPort = await new Promise<number>((resolve, reject) => {
-				RenderInternals.getDesiredPort({
+			const {port, unlockPort, didUsePort} =
+				await RenderInternals.getDesiredPort({
 					desiredPort,
 					from: 3000,
 					to: 3100,
 					hostsToTry: portConfig.hostsToTry,
-				})
-					.then(({port, unlockPort}) => {
-						RenderInternals.Log.verbose(
-							{indent: false, logLevel: options.logLevel},
-							`Binding server to host ${portConfig.host}, port ${port}`,
-						);
-						server.listen({
-							port,
-							host: portConfig.host,
-						});
-						server.on('listening', () => {
-							resolve(port);
-							return unlockPort();
-						});
-						server.on('error', (err) => {
-							reject(err);
-						});
-					})
-					.catch((err) => reject(err));
+					onPortUnavailable,
+				});
+
+			if (didUsePort) {
+				unlockPort();
+				await Promise.all([
+					new Promise<void>((resolve) => {
+						server.close(() => resolve());
+					}),
+					new Promise<void>((resolve) => {
+						compiler.close(() => resolve());
+					}),
+				]);
+				return {
+					type: 'already-running' as const,
+					port,
+				};
+			}
+
+			const selectedPort = await new Promise<number>((resolve, reject) => {
+				RenderInternals.Log.verbose(
+					{indent: false, logLevel: options.logLevel},
+					`Binding server to host ${portConfig.host}, port ${port}`,
+				);
+				server.listen({
+					port,
+					host: portConfig.host,
+				});
+				server.on('listening', () => {
+					resolve(port);
+					return unlockPort();
+				});
+				server.on('error', (err) => {
+					reject(err);
+				});
 			});
+
 			return {
+				type: 'started' as const,
 				port: selectedPort as number,
 				liveEventsServer,
 				close: async () => {

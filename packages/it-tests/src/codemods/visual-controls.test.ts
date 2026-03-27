@@ -1,5 +1,5 @@
-import {StudioServerInternals} from '@remotion/studio-server';
 import {expect, test} from 'bun:test';
+import {StudioServerInternals} from '@remotion/studio-server';
 
 const contents = `
 import {makeTransform, matrix3d} from '@remotion/animation-utils';
@@ -45,11 +45,13 @@ test('Should be able to create visual control', () => {
 				{
 					id: 'my-matrix-4',
 					newValueSerialized: JSON.stringify(123),
+					newValueIsUndefined: false,
 					enumPaths: [],
 				},
 				{
 					id: 'my-matrix-2',
 					newValueSerialized: JSON.stringify(456),
+					newValueIsUndefined: false,
 					enumPaths: [[]],
 				},
 			],

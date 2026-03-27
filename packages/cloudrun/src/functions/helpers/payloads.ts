@@ -37,6 +37,8 @@ export const CloudRunPayload = z.discriminatedUnion('type', [
 		composition: z.string(),
 		forceHeight: z.number().optional().nullable(),
 		forceWidth: z.number().optional().nullable(),
+		forceFps: z.number().optional().nullable(),
+		forceDurationInFrames: z.number().optional().nullable(),
 		codec,
 		serializedInputPropsWithCustomSchema: z.string(),
 		jpegQuality: z.number().nullable(),
@@ -53,8 +55,11 @@ export const CloudRunPayload = z.discriminatedUnion('type', [
 		x264Preset,
 		everyNthFrame: z.number(),
 		numberOfGifLoops: z.number().nullable(),
-		frameRange: z.tuple([z.number(), z.number()]).or(z.number()).nullable(),
-		envVariables: z.record(z.string()),
+		frameRange: z
+			.tuple([z.number(), z.number().nullable()])
+			.or(z.number())
+			.nullable(),
+		envVariables: z.record(z.string(), z.string()),
 		chromiumOptions: chromiumOptions.optional(),
 		muted: z.boolean(),
 		outputBucket: z.string(),
@@ -71,12 +76,12 @@ export const CloudRunPayload = z.discriminatedUnion('type', [
 		colorSpace: z.enum(BrowserSafeApis.validColorSpaces).nullable(),
 		clientVersion: z.string(),
 		downloadBehavior,
-		metadata: z.record(z.string()).optional().nullable(),
+		metadata: z.record(z.string(), z.string()).optional().nullable(),
 		renderIdOverride: z.string().optional().nullable(),
 		renderStatusWebhook: z
 			.object({
 				url: z.string(),
-				headers: z.record(z.string()),
+				headers: z.record(z.string(), z.string()),
 				data: z.any(),
 				webhookProgressInterval: z.number().min(0).max(1).optional().nullable(),
 			})
@@ -89,12 +94,14 @@ export const CloudRunPayload = z.discriminatedUnion('type', [
 		composition: z.string(),
 		forceHeight: z.number().optional().nullable(),
 		forceWidth: z.number().optional().nullable(),
+		forceFps: z.number().optional().nullable(),
+		forceDurationInFrames: z.number().optional().nullable(),
 		serializedInputPropsWithCustomSchema: z.string(),
 		jpegQuality: z.number().optional(),
 		imageFormat: stillImageFormat,
 		scale: z.number(),
 		privacy: z.enum(['public', 'private', 'no-acl']),
-		envVariables: z.record(z.string()),
+		envVariables: z.record(z.string(), z.string()),
 		chromiumOptions: chromiumOptions.optional(),
 		outputBucket: z.string(),
 		outName: z.string().nullable(),
@@ -106,12 +113,12 @@ export const CloudRunPayload = z.discriminatedUnion('type', [
 		offthreadVideoThreads: z.number().nullable(),
 		clientVersion: z.string(),
 		downloadBehavior,
-		metadata: z.record(z.string()).optional().nullable(),
+		metadata: z.record(z.string(), z.string()).optional().nullable(),
 		renderIdOverride: z.string().optional().nullable(),
 		renderStatusWebhook: z
 			.object({
 				url: z.string(),
-				headers: z.record(z.string()),
+				headers: z.record(z.string(), z.string()),
 				data: z.any(),
 				webhookProgressInterval: z.number().min(0).max(1).optional().nullable(),
 			})

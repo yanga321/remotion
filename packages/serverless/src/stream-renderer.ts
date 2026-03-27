@@ -1,3 +1,5 @@
+import {writeFileSync} from 'fs';
+import {join} from 'path';
 import type {EmittedArtifact, LogLevel} from '@remotion/renderer';
 import {RenderInternals} from '@remotion/renderer';
 import type {
@@ -10,8 +12,6 @@ import {
 	deserializeArtifact,
 	ServerlessRoutines,
 } from '@remotion/serverless-client';
-import {writeFileSync} from 'fs';
-import {join} from 'path';
 import type {OverallProgressHelper} from './overall-render-progress';
 import type {InsideFunctionSpecifics} from './provider-implementation';
 
@@ -185,6 +185,8 @@ const streamRenderer = <Provider extends CloudProvider>({
 				const shouldRetry =
 					(err as Error).stack?.includes('Error: aborted') ||
 					(err as Error).stack?.includes('ETIMEDOUT') ||
+					(err as Error).stack?.includes('socket hang up') ||
+					(err as Error).stack?.includes('ECONNRESET') ||
 					false;
 
 				resolve({

@@ -9,14 +9,15 @@ import React, {
 	useState,
 } from 'react';
 import {useRemotionEnvironment} from 'remotion';
-import type {z, ZodTypeAny} from 'zod';
 import {getZodSchemaFromPrimitive} from '../api/get-zod-schema-from-primitive';
 import {useZodIfPossible} from '../components/get-zod-if-possible';
+import type {AnyZodSchema} from '../components/RenderModal/SchemaEditor/zod-schema-type';
 import {getVisualControlEditedValue} from './get-current-edited-value';
+import {visualControlStore} from './visual-control-store';
 
 export type VisualControlValueWithoutUnsaved = {
 	valueInCode: unknown;
-	schema: ZodTypeAny;
+	schema: AnyZodSchema;
 	stack: string;
 };
 
@@ -38,7 +39,7 @@ export const VisualControlsTabActivatedContext =
 export type SetVisualControlsContextType = {
 	updateHandles: () => void;
 	updateValue: (key: string, value: unknown) => void;
-	visualControl: <T>(key: string, value: T, schema?: z.ZodTypeAny) => T;
+	visualControl: <T>(key: string, value: T, schema?: AnyZodSchema) => T;
 };
 
 export const VisualControlsContext = createContext<VisualControlsContextType>({
@@ -47,7 +48,7 @@ export const VisualControlsContext = createContext<VisualControlsContextType>({
 
 export type VisualControlRef = {
 	// May not call it visualControl, because we rely on stacktrace names
-	globalVisualControl: <T>(key: string, value: T, schema?: z.ZodTypeAny) => T;
+	globalVisualControl: <T>(key: string, value: T, schema?: AnyZodSchema) => T;
 };
 
 export const visualControlRef = createRef<VisualControlRef>();
@@ -82,18 +83,21 @@ export const VisualControlsProvider: React.FC<{
 
 	const setControl = useCallback(
 		(key: string, value: VisualControlValueWithoutUnsaved) => {
-			const currentUnsaved = imperativeHandles.current?.[key]?.unsavedValue;
-			const currentSavedState = imperativeHandles.current?.[key]?.valueInCode;
+			const existingHandle = imperativeHandles.current?.[key];
+			const currentSavedState = existingHandle?.valueInCode;
 
 			const changedSavedValue = value.valueInCode !== currentSavedState;
 			const changedUnsavedValue =
-				currentUnsaved === undefined && value.valueInCode !== undefined;
+				existingHandle === undefined && value.valueInCode !== undefined;
 
 			imperativeHandles.current = {
 				...imperativeHandles.current,
 				[key]: {
 					...value,
-					unsavedValue: currentUnsaved ?? value.valueInCode,
+					unsavedValue:
+						existingHandle !== undefined && !changedSavedValue
+							? existingHandle.unsavedValue
+							: value.valueInCode,
 					valueInCode: value.valueInCode,
 				},
 			};
@@ -116,7 +120,7 @@ export const VisualControlsProvider: React.FC<{
 
 	const visualControl = useCallback(
 		// eslint-disable-next-line prefer-arrow-callback
-		function <T>(key: string, value: T, schema?: z.ZodTypeAny): T {
+		function <T>(key: string, value: T, schema?: AnyZodSchema): T {
 			// eslint-disable-next-line no-constant-condition
 			if (handles && false) {
 				/** Intentional: State is managed imperatively */
@@ -132,7 +136,7 @@ export const VisualControlsProvider: React.FC<{
 
 			const {changed, currentValue} = setControl(key, {
 				valueInCode: value,
-				schema: schema ?? getZodSchemaFromPrimitive(value, z),
+				schema: (schema ?? getZodSchemaFromPrimitive(value, z)) as AnyZodSchema,
 				stack: new Error().stack as string,
 			});
 
@@ -161,6 +165,7 @@ export const VisualControlsProvider: React.FC<{
 				},
 			};
 			updateHandles();
+			visualControlStore.emitChange();
 		},
 		[updateHandles],
 	);

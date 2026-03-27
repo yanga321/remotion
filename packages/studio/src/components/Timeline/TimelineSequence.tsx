@@ -10,12 +10,14 @@ import {getTimelineLayerHeight} from '../../helpers/timeline-layout';
 import {useMaxMediaDuration} from '../../helpers/use-max-media-duration';
 import {AudioWaveform} from '../AudioWaveform';
 import {LoopedTimelineIndicator} from './LoopedTimelineIndicators';
+import {TimelineImageInfo} from './TimelineImageInfo';
 import {TimelineSequenceFrame} from './TimelineSequenceFrame';
 import {TimelineVideoInfo} from './TimelineVideoInfo';
 import {TimelineWidthContext} from './TimelineWidthProvider';
 
 const AUDIO_GRADIENT = 'linear-gradient(rgb(16 171 58), rgb(43 165 63) 60%)';
 const VIDEO_GRADIENT = 'linear-gradient(to top, #8e44ad, #9b59b6)';
+const IMAGE_GRADIENT = 'linear-gradient(to top, #2980b9, #3498db)';
 
 export const TimelineSequence: React.FC<{
 	readonly s: TSequence;
@@ -62,20 +64,22 @@ const Inner: React.FC<{
 		relativeFrameWithPostmount < (s.postmountDisplay ?? 0) &&
 		!isInRange;
 
-	const {marginLeft, width, premountWidth, postmountWidth} = useMemo(() => {
-		return getTimelineSequenceLayout({
-			durationInFrames: s.loopDisplay
-				? s.loopDisplay.durationInFrames * s.loopDisplay.numberOfTimes
-				: s.duration,
-			startFrom: s.loopDisplay ? s.from + s.loopDisplay.startOffset : s.from,
-			startFromMedia: s.type === 'sequence' ? 0 : s.startMediaFrom,
-			maxMediaDuration,
-			video,
-			windowWidth,
-			premountDisplay: s.premountDisplay,
-			postmountDisplay: s.postmountDisplay,
-		});
-	}, [maxMediaDuration, s, video, windowWidth]);
+	const {marginLeft, width, naturalWidth, premountWidth, postmountWidth} =
+		useMemo(() => {
+			return getTimelineSequenceLayout({
+				durationInFrames: s.loopDisplay
+					? s.loopDisplay.durationInFrames * s.loopDisplay.numberOfTimes
+					: s.duration,
+				startFrom: s.loopDisplay ? s.from + s.loopDisplay.startOffset : s.from,
+				startFromMedia:
+					s.type === 'sequence' || s.type === 'image' ? 0 : s.startMediaFrom,
+				maxMediaDuration,
+				video,
+				windowWidth,
+				premountDisplay: s.premountDisplay,
+				postmountDisplay: s.postmountDisplay,
+			});
+		}, [maxMediaDuration, s, video, windowWidth]);
 
 	const style: React.CSSProperties = useMemo(() => {
 		return {
@@ -84,11 +88,13 @@ const Inner: React.FC<{
 					? AUDIO_GRADIENT
 					: s.type === 'video'
 						? VIDEO_GRADIENT
-						: BLUE,
+						: s.type === 'image'
+							? IMAGE_GRADIENT
+							: BLUE,
 			border: SEQUENCE_BORDER_WIDTH + 'px solid rgba(255, 255, 255, 0.2)',
 			borderRadius: 2,
 			position: 'absolute',
-			height: getTimelineLayerHeight(s.type === 'video' ? 'video' : 'other'),
+			height: getTimelineLayerHeight(s.type),
 			marginLeft,
 			width,
 			color: 'white',
@@ -153,9 +159,14 @@ const Inner: React.FC<{
 				<TimelineVideoInfo
 					src={s.src}
 					visualizationWidth={width}
-					startFrom={s.startMediaFrom}
+					naturalWidth={naturalWidth}
+					trimBefore={s.startMediaFrom}
 					durationInFrames={s.duration}
+					playbackRate={s.playbackRate}
 				/>
+			) : null}
+			{s.type === 'image' ? (
+				<TimelineImageInfo src={s.src} visualizationWidth={width} />
 			) : null}
 			{s.loopDisplay === undefined ? null : (
 				<LoopedTimelineIndicator loops={s.loopDisplay.numberOfTimes} />
@@ -163,6 +174,7 @@ const Inner: React.FC<{
 
 			{s.type !== 'audio' &&
 			s.type !== 'video' &&
+			s.type !== 'image' &&
 			s.loopDisplay === undefined &&
 			(isInRange || isPremounting || isPostmounting) ? (
 				<div

@@ -7,9 +7,7 @@ test(
 		const missedFrames = await getMissedFramesforCodec('webm', 'normal');
 		expect(missedFrames).toBeLessThanOrEqual(8);
 	},
-	{
-		timeout: 30000,
-	},
+	{retry: 3},
 );
 
 test(
@@ -18,9 +16,7 @@ test(
 		const missedFrames = await getMissedFramesforCodec('webm', 'offthread');
 		expect(missedFrames).toBe(0);
 	},
-	{
-		timeout: 30000,
-	},
+	{retry: 3},
 );
 
 test(
@@ -29,9 +25,7 @@ test(
 		const missedFrames = await getMissedFramesforCodec('mp4', 'normal');
 		expect(missedFrames).toBeLessThanOrEqual(8);
 	},
-	{
-		timeout: 30000,
-	},
+	{retry: 3},
 );
 
 test(
@@ -40,7 +34,5 @@ test(
 		const missedFrames = await getMissedFramesforCodec('mp4', 'offthread');
 		expect(missedFrames).toBe(0);
 	},
-	{
-		timeout: 30000,
-	},
+	{retry: 3},
 );

@@ -3,7 +3,7 @@
 		"url": "https://github.com/remotion-dev/remotion/tree/main/packages/enable-scss"
 	},
 	"name": "@remotion/enable-scss",
-	"version": "4.0.410",
+	"version": "4.0.441",
 	"description": "Enable SCSS support in Remotion",
 	"main": "dist/cjs/index.js",
 	"types": "dist/cjs/index.d.ts",
@@ -11,8 +11,9 @@
 	"sideEffects": false,
 	"scripts": {
 		"lint": "eslint src",
-		"make": "tsc -d && bun --env-file=../.env.bundle bundle.ts",
-		"formatting": "prettier --experimental-cli src --check"
+		"make": "tsgo -d && bun --env-file=../.env.bundle bundle.ts",
+		"formatting": "oxfmt src --check",
+		"format": "oxfmt src"
 	},
 	"author": "Jonny Burger <jonny@remotion.dev>",
 	"contributors": [],
@@ -31,7 +32,8 @@
 	"devDependencies": {
 		"@remotion/bundler": "workspace:*",
 		"@remotion/eslint-config-internal": "workspace:*",
-		"eslint": "catalog:"
+		"eslint": "catalog:",
+		"@typescript/native-preview": "catalog:"
 	},
 	"keywords": [
 		"remotion",

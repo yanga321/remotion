@@ -1,6 +1,5 @@
-import type {_InternalTypes} from 'remotion';
+import type {AnyComposition, AnyZodObject} from 'remotion';
 import {Internals, getRemotionEnvironment} from 'remotion';
-import type {AnyZodObject} from 'zod';
 
 export type UpdateDefaultPropsFunction = (currentValues: {
 	schema: AnyZodObject | null;
@@ -12,7 +11,7 @@ export const calcNewProps = (
 	compositionId: string,
 	defaultProps: UpdateDefaultPropsFunction,
 ): {
-	composition: _InternalTypes['AnyComposition'];
+	composition: AnyComposition;
 	generatedDefaultProps: Record<string, unknown>;
 } => {
 	if (!getRemotionEnvironment().isStudio) {
@@ -21,7 +20,7 @@ export const calcNewProps = (
 		);
 	}
 
-	const {compositionsRef, editorPropsProviderRef} = Internals;
+	const {compositionsRef} = Internals;
 
 	const compositionsStore = compositionsRef.current;
 	if (!compositionsStore) {
@@ -38,21 +37,14 @@ export const calcNewProps = (
 		);
 	}
 
-	const propsStore = editorPropsProviderRef.current;
-	if (!propsStore) {
-		throw new Error(
-			'No props store found. Are you in the Remotion Studio and are the Remotion versions aligned?',
-		);
-	}
-
 	const savedDefaultProps = composition.defaultProps ?? {};
-	const unsavedDefaultProps =
-		propsStore.getProps()[compositionId] ?? savedDefaultProps;
 
 	const generatedDefaultProps = defaultProps({
 		schema: composition.schema,
 		savedDefaultProps,
-		unsavedDefaultProps,
+		// Kept for backwards compatibility - since all props are now
+		// immediately saved, this is the same as savedDefaultProps.
+		unsavedDefaultProps: savedDefaultProps,
 	});
 
 	return {

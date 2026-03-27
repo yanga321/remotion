@@ -3,7 +3,7 @@
 		"url": "https://github.com/remotion-dev/remotion/tree/main/packages/bundler"
 	},
 	"name": "@remotion/bundler",
-	"version": "4.0.410",
+	"version": "4.0.441",
 	"description": "Bundle Remotion compositions using Webpack",
 	"main": "dist/index.js",
 	"sideEffects": false,
@@ -11,24 +11,29 @@
 		"url": "https://github.com/remotion-dev/remotion/issues"
 	},
 	"scripts": {
-		"formatting": "prettier --experimental-cli src --check",
+		"formatting": "oxfmt src --check",
+		"format": "oxfmt src",
 		"lint": "eslint src",
 		"test": "bun test src",
-		"make": "tsc -d"
+		"make": "tsgo -d"
 	},
 	"author": "Jonny Burger <jonny@remotion.dev>",
 	"license": "SEE LICENSE IN LICENSE.md",
 	"dependencies": {
-		"css-loader": "5.2.7",
+		"@rspack/core": "1.7.6",
+		"@rspack/plugin-react-refresh": "1.6.1",
+		"loader-utils": "2.0.2",
+		"postcss": "8.5.1",
+		"postcss-value-parser": "4.2.0",
 		"esbuild": "0.25.0",
-		"react-refresh": "0.9.0",
+		"react-refresh": "0.18.0",
 		"remotion": "workspace:*",
 		"@remotion/studio": "workspace:*",
 		"@remotion/studio-shared": "workspace:*",
 		"@remotion/media-parser": "workspace:*",
 		"style-loader": "4.0.0",
 		"source-map": "0.7.3",
-		"webpack": "5.96.1"
+		"webpack": "5.105.0"
 	},
 	"peerDependencies": {
 		"react": ">=16.8.0",
@@ -38,7 +43,8 @@
 		"react": "catalog:",
 		"react-dom": "catalog:",
 		"@remotion/eslint-config-internal": "workspace:*",
-		"eslint": "catalog:"
+		"eslint": "catalog:",
+		"@typescript/native-preview": "catalog:"
 	},
 	"keywords": [
 		"remotion",
@@ -48,6 +54,11 @@
 		"webpack",
 		"player"
 	],
+	"exports": {
+		".": "./dist/index.js",
+		"./css-loader": "./css-loader/index.js",
+		"./package.json": "./package.json"
+	},
 	"publishConfig": {
 		"access": "public"
 	},

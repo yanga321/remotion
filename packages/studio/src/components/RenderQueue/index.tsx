@@ -2,10 +2,11 @@ import React, {useContext, useEffect, useMemo} from 'react';
 import {Internals} from 'remotion';
 import {StudioServerConnectionCtx} from '../../helpers/client-id';
 import {BACKGROUND, BORDER_COLOR, LIGHT_TEXT} from '../../helpers/colors';
-import {VERTICAL_SCROLLBAR_CLASSNAME} from '../Menu/is-menu-item';
+import {SHOW_BROWSER_RENDERING} from '../../helpers/show-browser-rendering';
 import {Spacing} from '../layout';
+import {VERTICAL_SCROLLBAR_CLASSNAME} from '../Menu/is-menu-item';
+import {RenderQueueContext} from './context';
 import {RenderQueueItem} from './RenderQueueItem';
-import {isClientRenderJob, RenderQueueContext} from './context';
 
 const separatorStyle: React.CSSProperties = {
 	borderBottom: `1px solid ${BORDER_COLOR}`,
@@ -66,27 +67,10 @@ export const RenderQueue: React.FC = () => {
 			return -1;
 		}
 
-		if (canvasContent.type === 'output-blob') {
-			for (let i = 0; i < jobs.length; i++) {
-				const job = jobs[i];
-				if (isClientRenderJob(job) && job.status === 'done') {
-					if (canvasContent.getBlob === job.getBlob) {
-						return i;
-					}
-				}
-			}
-
-			return -1;
-		}
-
 		if (canvasContent.type === 'output') {
 			for (let i = 0; i < jobs.length; i++) {
 				const job = jobs[i];
-				if (
-					!isClientRenderJob(job) &&
-					job.status === 'done' &&
-					canvasContent.path === `/${job.outName}`
-				) {
+				if (job.status === 'done' && canvasContent.path === `/${job.outName}`) {
 					return i;
 				}
 			}
@@ -95,7 +79,7 @@ export const RenderQueue: React.FC = () => {
 		return -1;
 	}, [canvasContent, jobs]);
 
-	if (connectionStatus === 'disconnected') {
+	if (connectionStatus === 'disconnected' && !SHOW_BROWSER_RENDERING) {
 		return (
 			<div style={explainer}>
 				<Spacing y={5} />

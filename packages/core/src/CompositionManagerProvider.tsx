@@ -5,7 +5,7 @@ import {
 	useRef,
 	useState,
 } from 'react';
-import type {AnyZodObject} from 'zod';
+import type {AnyZodObject} from './any-zod-type.js';
 import type {TComposition} from './CompositionManager';
 import {compositionsRef, type AnyComposition} from './CompositionManager';
 import type {
@@ -19,6 +19,7 @@ import {
 } from './CompositionManagerContext';
 import type {BaseMetadata} from './CompositionManagerContext.js';
 import type {TFolder} from './Folder';
+import type {NonceHistory} from './nonce.js';
 
 export const CompositionManagerProvider = ({
 	children,
@@ -65,11 +66,7 @@ export const CompositionManagerProvider = ({
 					);
 				}
 
-				const value = [...comps, comp]
-					.slice()
-
-					.sort((a, b) => a.nonce - b.nonce) as AnyComposition[];
-				return value;
+				return [...comps, comp] as AnyComposition[];
 			});
 		},
 		[updateCompositions],
@@ -81,17 +78,21 @@ export const CompositionManagerProvider = ({
 		});
 	}, []);
 
-	const registerFolder = useCallback((name: string, parent: string | null) => {
-		setFolders((prevFolders) => {
-			return [
-				...prevFolders,
-				{
-					name,
-					parent,
-				},
-			];
-		});
-	}, []);
+	const registerFolder = useCallback(
+		(name: string, parent: string | null, nonce: NonceHistory) => {
+			setFolders((prevFolders) => {
+				return [
+					...prevFolders,
+					{
+						name,
+						parent,
+						nonce,
+					},
+				];
+			});
+		},
+		[],
+	);
 
 	const unregisterFolder = useCallback(
 		(name: string, parent: string | null) => {
@@ -110,26 +111,6 @@ export const CompositionManagerProvider = ({
 		};
 	}, []);
 
-	const updateCompositionDefaultProps = useCallback(
-		(id: string, newDefaultProps: Record<string, unknown>) => {
-			setCompositions((comps) => {
-				const updated = comps.map((c) => {
-					if (c.id === id) {
-						return {
-							...c,
-							defaultProps: newDefaultProps,
-						};
-					}
-
-					return c;
-				});
-
-				return updated;
-			});
-		},
-		[],
-	);
-
 	const compositionManagerSetters = useMemo((): CompositionManagerSetters => {
 		return {
 			registerComposition,
@@ -137,7 +118,6 @@ export const CompositionManagerProvider = ({
 			registerFolder,
 			unregisterFolder,
 			setCanvasContent,
-			updateCompositionDefaultProps,
 			onlyRenderComposition,
 		};
 	}, [
@@ -145,7 +125,6 @@ export const CompositionManagerProvider = ({
 		registerFolder,
 		unregisterComposition,
 		unregisterFolder,
-		updateCompositionDefaultProps,
 		onlyRenderComposition,
 	]);
 

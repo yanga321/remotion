@@ -1,5 +1,5 @@
-import type {LogLevel} from '@remotion/renderer';
 import type {Readable} from 'node:stream';
+import type {LogLevel} from '@remotion/renderer';
 import type {DownloadBehavior} from 'remotion';
 import type {CustomCredentials, Privacy, ServerlessRoutines} from './constants';
 import type {RenderMetadata} from './render-metadata';
@@ -59,6 +59,7 @@ type CreateBucket<Provider extends CloudProvider> = (params: {
 	forcePathStyle: boolean;
 	skipPutAcl: boolean;
 	requestHandler: Provider['requestHandler'] | null;
+	logLevel: LogLevel;
 }) => Promise<void>;
 
 type ApplyLifeCycle<Provider extends CloudProvider> = (params: {

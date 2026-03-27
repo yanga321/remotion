@@ -8,6 +8,31 @@ type Bug = {
 
 export const bugs: Bug[] = [
 	{
+		title: '@remotion/media Audio is broken',
+		description: 'Audio would play heavily offset',
+		link: 'https://remotion.dev/changelog',
+		versions: ['4.0.433'],
+	},
+	{
+		title: 'Version mismatch warnings',
+		description: 'You would get version mismatch warnings when using the CLI.',
+		link: 'https://remotion.dev/changelog',
+		versions: ['4.0.431'],
+	},
+	{
+		title: 'Lambda could not render fonts',
+		description: 'Upgrade to 4.0.417.',
+		link: 'https://remotion.dev/changelog',
+		versions: ['4.0.416'],
+	},
+	{
+		title: 'Packages have wrong dependency versions',
+		description:
+			'Packages would have dependencies of 4.0.414 instead of 4.0.415. Upgrade to 4.0.417.',
+		link: 'https://remotion.dev/changelog',
+		versions: ['4.0.415'],
+	},
+	{
 		title: 'Keyboard shortcuts are broken in the Studio',
 		description: 'Upgrade to 4.0.409.',
 		link: 'https://remotion.dev/changelog',

@@ -3,14 +3,15 @@
 		"url": "https://github.com/remotion-dev/remotion/tree/main/packages/serverless-client"
 	},
 	"name": "@remotion/serverless-client",
-	"version": "4.0.410",
+	"version": "4.0.441",
 	"main": "dist",
 	"sideEffects": false,
 	"scripts": {
 		"lint": "eslint src",
-		"formatting": "prettier --experimental-cli src --check",
+		"formatting": "oxfmt src --check",
+		"format": "oxfmt src",
 		"test": "bun test src",
-		"make": "tsc -d && bun --env-file=../.env.bundle bundle.ts"
+		"make": "tsgo -d && bun --env-file=../.env.bundle bundle.ts"
 	},
 	"author": "Jonny Burger <jonny@remotion.dev>",
 	"contributors": [],
@@ -27,7 +28,8 @@
 		"@remotion/streaming": "workspace:*",
 		"@remotion/renderer": "workspace:*",
 		"@remotion/eslint-config-internal": "workspace:*",
-		"eslint": "catalog:"
+		"eslint": "catalog:",
+		"@typescript/native-preview": "catalog:"
 	},
 	"exports": {
 		"./package.json": "./package.json",

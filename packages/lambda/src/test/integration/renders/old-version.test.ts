@@ -1,5 +1,6 @@
-import {ServerlessRoutines} from '@remotion/serverless';
 import {expect, test} from 'bun:test';
+import path from 'path';
+import {ServerlessRoutines} from '@remotion/serverless';
 import {mockImplementation} from '../../mocks/mock-implementation';
 
 test(
@@ -10,7 +11,7 @@ test(
 				type: ServerlessRoutines.launch,
 				payload: {
 					type: ServerlessRoutines.launch,
-					serveUrl: 'https://competent-mccarthy-56f7c9.netlify.app/',
+					serveUrl: path.join(__dirname, 'old-version-bundle'),
 					chromiumOptions: {},
 					codec: 'h264',
 					composition: 'react-svg',
@@ -49,6 +50,8 @@ test(
 					encodingMaxRate: null,
 					forceHeight: null,
 					forceWidth: null,
+					forceFps: null,
+					forceDurationInFrames: null,
 					rendererFunctionName: null,
 					bucketName: 'remotion-dev-render',
 					audioCodec: null,

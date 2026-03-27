@@ -1,8 +1,8 @@
-import {LambdaClientInternals} from '@remotion/lambda-client';
 import {expect, test} from 'bun:test';
 import {execSync} from 'child_process';
 import {readFileSync, writeFileSync} from 'fs';
 import path from 'path';
+import {LambdaClientInternals} from '@remotion/lambda-client';
 
 test('Set the right version for gotest', () => {
 	const referenceVersion = readFileSync(
@@ -24,7 +24,7 @@ test('Set the right version for gotest', () => {
 test(
 	'Go package should create the same payload as normal Lambda package',
 	async () => {
-		const goOutput = execSync('go test', {
+		const goOutput = execSync('go test -mod=readonly', {
 			cwd: path.join(process.cwd(), '..', 'lambda-go'),
 		});
 		const firstLine = goOutput.toString().split('\n')[0];
@@ -51,6 +51,8 @@ test(
 				forceBucketName: null,
 				forceHeight: null,
 				forceWidth: null,
+				forceDurationInFrames: null,
+				forceFps: null,
 				frameRange: null,
 				framesPerLambda: null,
 				imageFormat: 'jpeg',

@@ -15,10 +15,11 @@ test('Should render last frame for timestamps after video end', async () => {
 		playbackRate: 1,
 		fps: 24,
 		maxCacheSize: getMaxVideoCacheSize('info'),
+		credentials: undefined,
 	});
 
 	assert(result.type === 'success');
-	expect(result.sample?.timestamp).toBe(9.96);
+	expect(result.frame?.timestamp).toBe(9.96 * 1_000_000);
 
 	keyframeManager.clearAll('info');
 });

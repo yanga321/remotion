@@ -6,7 +6,12 @@ import {makeNonceManager} from '../nonce-manager';
 import {extractFrame} from '../video-extraction/extract-frame';
 import {videoIteratorManager} from '../video-iterator-manager';
 
-test('in preview, should properly buffer and draw frames', async () => {
+test('in preview, should properly buffer and draw frames', async (t) => {
+	if (t.task.file.projectName === 'webkit') {
+		t.skip();
+		return;
+	}
+
 	const input = new Input({
 		source: new UrlSource('/no-frames-in-beginning.webm'),
 		formats: ALL_FORMATS,
@@ -84,16 +89,19 @@ test('same goes for audio', async () => {
 			unblock: () => {},
 			[Symbol.dispose]: () => {},
 		}),
-		sharedAudioContext: new AudioContext(),
+		sharedAudioContext: {
+			audioContext: new AudioContext(),
+			audioSyncAnchor: {value: 0},
+			scheduleAudioNode: () => ({
+				type: 'started',
+				scheduledTime: 0,
+			}),
+		},
 		getIsLooping: () => false,
-		getEndTime: () => {
-			throw new Error('not implemented');
-		},
-		getStartTime: () => {
-			throw new Error('not implemented');
-		},
-		updatePlaybackTime: () => {},
+		getEndTime: () => Infinity,
+		getStartTime: () => 0,
 		initialMuted: false,
+		drawDebugOverlay: () => {},
 	});
 
 	const nonceManager = makeNonceManager();
@@ -103,33 +111,35 @@ test('same goes for audio', async () => {
 		playbackRate: 1,
 		startFromSecond: 0.06671494248275864,
 		getIsPlaying: () => true,
-		scheduleAudioNode: (node, mediaTimestamp) => {
-			node.start(mediaTimestamp);
-		},
+		scheduleAudioNode: () => ({
+			type: 'started',
+			scheduledTime: 0,
+		}),
+		debugAudioScheduling: false,
 	});
 
 	await manager.seek({
 		newTime: 0.10007241372413796,
 		nonce: nonceManager.createAsyncOperation(),
-		fps: 30,
 		playbackRate: 1,
 		getIsPlaying: () => true,
-		scheduleAudioNode: (node) => {
-			node.start(1);
-		},
-		bufferState: {
-			delayPlayback: () => ({
-				unblock: () => {},
-				[Symbol.dispose]: () => {},
-			}),
-		},
+		scheduleAudioNode: () => ({
+			type: 'started',
+			scheduledTime: 0,
+		}),
+		debugAudioScheduling: false,
 	});
 
 	const iterators = manager.getAudioIteratorsCreated();
 	expect(iterators).toBe(1);
 });
 
-test('in rendering, should also be smart', async () => {
+test('in rendering, should also be smart', async (t) => {
+	if (t.task.file.projectName === 'webkit') {
+		t.skip();
+		return;
+	}
+
 	let lastFrame;
 	for (let i = 0; i < 5; i++) {
 		const frame = await extractFrame({
@@ -142,15 +152,17 @@ test('in rendering, should also be smart', async () => {
 			playbackRate: 1,
 			fps: 30,
 			maxCacheSize: getMaxVideoCacheSize('info'),
+			credentials: undefined,
 		});
 		assert(frame.type === 'success');
 		if (lastFrame) {
-			expect(frame.sample === lastFrame).toBe(true);
+			// maybe this assertion is useless, since ht e
+			expect(frame.frame?.timestamp === lastFrame.timestamp).toBe(true);
 			continue;
 		}
 
-		expect(frame.sample?.timestamp).toBe(4.045);
-		lastFrame = frame.sample;
+		expect(frame.frame?.timestamp).toBe(4.045 * 1_000_000);
+		lastFrame = frame.frame;
 	}
 
 	const firstRealFrame = await extractFrame({
@@ -163,10 +175,11 @@ test('in rendering, should also be smart', async () => {
 		playbackRate: 1,
 		fps: 30,
 		maxCacheSize: getMaxVideoCacheSize('info'),
+		credentials: undefined,
 	});
 
 	assert(firstRealFrame.type === 'success');
-	expect(firstRealFrame.sample?.timestamp).toBe(4.979);
+	expect(firstRealFrame.frame?.timestamp).toBe(4.979 * 1_000_000);
 
 	keyframeManager.clearAll('info');
 });

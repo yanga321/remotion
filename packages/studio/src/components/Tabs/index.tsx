@@ -6,7 +6,6 @@ import {
 	INPUT_BACKGROUND,
 	LIGHT_TEXT,
 } from '../../helpers/colors';
-
 import {useZIndex} from '../../state/z-index';
 
 const tabsContainer: React.CSSProperties = {
@@ -40,6 +39,8 @@ const selectorButton: React.CSSProperties = {
 	color: 'inherit',
 	alignItems: 'center',
 	cursor: 'default',
+	userSelect: 'none',
+	WebkitUserSelect: 'none',
 };
 
 export const Tab: React.FC<{

@@ -1,12 +1,14 @@
-import type {LogLevel} from '@remotion/renderer';
-import type {EventSourceEvent} from '@remotion/studio-shared';
 import type {
 	IncomingMessage,
 	OutgoingHttpHeaders,
 	ServerResponse,
 } from 'node:http';
+import type {LogLevel} from '@remotion/renderer';
+import type {EventSourceEvent} from '@remotion/studio-shared';
 import {printServerReadyComment} from '../server-ready';
+import {unsubscribeClientDefaultPropsWatchers} from './default-props-watchers';
 import {unsubscribeClientFileExistenceWatchers} from './file-existence-watchers';
+import {unsubscribeClientSequencePropsWatchers} from './sequence-props-watchers';
 
 type Client = {
 	id: string;
@@ -15,8 +17,10 @@ type Client = {
 
 export type LiveEventsServer = {
 	sendEventToClient: (event: EventSourceEvent) => void;
+	sendEventToClientId: (clientId: string, event: EventSourceEvent) => void;
 	router: (request: IncomingMessage, response: ServerResponse) => Promise<void>;
 	closeConnections: () => Promise<void>;
+	addNewClientListener: (cb: () => void) => () => void;
 };
 
 const serializeMessage = (message: EventSourceEvent) => {
@@ -25,8 +29,17 @@ const serializeMessage = (message: EventSourceEvent) => {
 
 let printPortMessageTimeout: Timer | null = null;
 
-export const makeLiveEventsRouter = (logLevel: LogLevel): LiveEventsServer => {
+export type InitialUndoRedoState = {
+	undoFile: string | null;
+	redoFile: string | null;
+};
+
+export const makeLiveEventsRouter = (
+	logLevel: LogLevel,
+	getInitialUndoRedoState: () => InitialUndoRedoState,
+): LiveEventsServer => {
 	let clients: Client[] = [];
+	let newClientListeners: (() => void)[] = [];
 
 	const router = (
 		request: IncomingMessage,
@@ -46,19 +59,25 @@ export const makeLiveEventsRouter = (logLevel: LogLevel): LiveEventsServer => {
 		}
 
 		const clientId = String(Math.random());
-		response.write(serializeMessage({type: 'init', clientId}));
+		const {undoFile, redoFile} = getInitialUndoRedoState();
+		response.write(
+			serializeMessage({type: 'init', clientId, undoFile, redoFile}),
+		);
 
 		const newClient = {
 			id: clientId,
 			response,
 		};
 		clients.push(newClient);
+		newClientListeners.forEach((cb) => cb());
 		if (printPortMessageTimeout) {
 			clearTimeout(printPortMessageTimeout);
 		}
 
 		request.on('close', () => {
+			unsubscribeClientDefaultPropsWatchers(clientId);
 			unsubscribeClientFileExistenceWatchers(clientId);
+			unsubscribeClientSequencePropsWatchers(clientId);
 			clients = clients.filter((client) => client.id !== clientId);
 
 			// If all clients disconnected, print a comment so user can easily restart it.
@@ -82,9 +101,25 @@ export const makeLiveEventsRouter = (logLevel: LogLevel): LiveEventsServer => {
 		});
 	};
 
+	const sendEventToClientId = (clientId: string, event: EventSourceEvent) => {
+		const client = clients.find((c) => c.id === clientId);
+		if (client) {
+			client.response.write(serializeMessage(event));
+		}
+	};
+
+	const addNewClientListener = (cb: () => void) => {
+		newClientListeners.push(cb);
+		return () => {
+			newClientListeners = newClientListeners.filter((l) => l !== cb);
+		};
+	};
+
 	return {
 		sendEventToClient,
+		sendEventToClientId,
 		router,
+		addNewClientListener,
 		closeConnections: () => {
 			return Promise.all(
 				clients.map((client) => {

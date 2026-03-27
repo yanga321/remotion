@@ -19,7 +19,7 @@ const shouldUseBun = (): boolean => {
 const shouldUseYarn = (): boolean => {
 	return Boolean(
 		process.env.npm_execpath?.includes('yarn.js') ||
-			process.env.npm_config_user_agent?.includes('yarn'),
+		process.env.npm_config_user_agent?.includes('yarn'),
 	);
 };
 
@@ -156,7 +156,7 @@ export const getDevCommand = (manager: PackageManager, template: Template) => {
 	if (
 		template.cliId === 'react-router' ||
 		template.cliId === 'next' ||
-		template.cliId === 'next-tailwind' ||
+		template.cliId === 'next-no-tailwind' ||
 		template.cliId === 'next-pages-dir'
 	) {
 		return `${getRunCommand(manager)} dev`;

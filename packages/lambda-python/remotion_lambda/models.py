@@ -302,7 +302,7 @@ class RenderMediaParams:
     chromium_options: Optional[ChromiumOptions] = None
     scale: Optional[int] = 1
     every_nth_frame: Optional[int] = 1
-    number_of_gif_loops: Optional[int] = 0
+    number_of_gif_loops: Optional[int] = None
     concurrency_per_lambda: Optional[int] = 1
     concurrency: Optional[int] = None
     download_behavior: Optional[Union[PlayInBrowser, ShouldDownload]] = field(
@@ -315,6 +315,8 @@ class RenderMediaParams:
     video_bitrate: Optional[int] = None
     webhook: Optional[Webhook] = None
     force_height: Optional[int] = None
+    force_fps: Optional[int] = None
+    force_duration_in_frames: Optional[int] = None
     offthreadvideo_cache_size_in_bytes: Optional[int] = None
     media_cache_size_in_bytes: Optional[int] = None
     offthreadvideo_threads: Optional[int] = None
@@ -373,6 +375,8 @@ class RenderMediaParams:
             'videoBitrate': self.video_bitrate,
             'webhook': self.webhook,
             'forceHeight': self.force_height,
+            'forceFps': self.force_fps,
+            'forceDurationInFrames': self.force_duration_in_frames,
             'offthreadVideoCacheSizeInBytes': self.offthreadvideo_cache_size_in_bytes,
             'mediaCacheSizeInBytes': self.media_cache_size_in_bytes,
             'offthreadVideoThreads': self.offthreadvideo_threads,
@@ -450,6 +454,8 @@ class RenderStillParams:
     license_key: Optional[str] = None
     storage_class: Optional[str] = None
     force_height: Optional[int] = None
+    force_fps: Optional[int] = None
+    force_duration_in_frames: Optional[int] = None
     force_bucket_name: Optional[str] = None
     dump_browser_logs: Optional[bool] = None
     delete_after: Optional[DeleteAfter] = None
@@ -505,6 +511,8 @@ class RenderStillParams:
             'forceWidth': self.force_width,
             'licenseKey': self.license_key if self.license_key is not None else self.api_key,
             'forceHeight': self.force_height,
+            'forceFps': self.force_fps,
+            'forceDurationInFrames': self.force_duration_in_frames,
             'forceBucketName': self.force_bucket_name,
             'deleteAfter': self.delete_after,
             'attempt': self.attempt,

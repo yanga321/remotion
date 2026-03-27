@@ -1,3 +1,4 @@
+import path from 'node:path';
 import type {LogLevel} from '@remotion/renderer';
 import type {
 	AggregateRenderProgress,
@@ -6,7 +7,6 @@ import type {
 	RenderJobWithCleanup,
 } from '@remotion/studio-server';
 import {StudioServerInternals} from '@remotion/studio-server';
-import path from 'node:path';
 import {chalk} from '../chalk';
 import {Log} from '../log';
 import {printError} from '../print-error';
@@ -223,15 +223,15 @@ const processJobIfPossible = async ({
 
 		const {unwatch} = StudioServerInternals.installFileWatcher({
 			file: path.resolve(remotionRoot, nextJob.outName),
-			onChange: (type) => {
-				if (type === 'created') {
+			onChange: (event) => {
+				if (event.type === 'created') {
 					updateJob(nextJob.id, (job) => ({
 						...job,
 						deletedOutputLocation: false,
 					}));
 				}
 
-				if (type === 'deleted') {
+				if (event.type === 'deleted') {
 					updateJob(nextJob.id, (job) => ({
 						...job,
 						deletedOutputLocation: true,

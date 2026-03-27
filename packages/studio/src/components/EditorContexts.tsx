@@ -5,10 +5,10 @@ import {FolderContextProvider} from '../state/folders';
 import {HighestZIndexProvider} from '../state/highest-z-index';
 import {KeybindingContextProvider} from '../state/keybindings';
 import {PreviewSizeProvider} from '../state/preview-size';
-
 import {SidebarContextProvider} from '../state/sidebar';
 import {VisualControlsProvider} from '../visual-controls/VisualControls';
 import {CheckerboardProvider} from './CheckerboardProvider';
+import {ExpandedTracksProvider} from './ExpandedTracksProvider';
 import {ZodProvider} from './get-zod-if-possible';
 import {MediaVolumeProvider} from './MediaVolumeProvider';
 import {ModalsProvider} from './ModalsProvider';
@@ -17,6 +17,7 @@ import {RenderQueueContextProvider} from './RenderQueue/context';
 import {SetTimelineInOutProvider} from './SetTimelineInOutProvider';
 import {ShowGuidesProvider} from './ShowGuidesProvider';
 import {ShowRulersProvider} from './ShowRulersProvider';
+import {VisualControlsUndoSync} from './VisualControls/VisualControlsUndoSync';
 import {ZoomGesturesProvider} from './ZoomGesturesProvider';
 
 export const EditorContexts: React.FC<{
@@ -27,6 +28,7 @@ export const EditorContexts: React.FC<{
 		<ZodProvider>
 			<VisualControlsProvider>
 				<PreviewServerConnection readOnlyStudio={readOnlyStudio}>
+					<VisualControlsUndoSync />
 					<RenderQueueContextProvider>
 						<ClientRenderQueueProcessor />
 						<KeybindingContextProvider>
@@ -44,7 +46,9 @@ export const EditorContexts: React.FC<{
 																<FolderContextProvider>
 																	<HighestZIndexProvider>
 																		<SetTimelineInOutProvider>
-																			{children}
+																			<ExpandedTracksProvider>
+																				{children}
+																			</ExpandedTracksProvider>
 																		</SetTimelineInOutProvider>
 																	</HighestZIndexProvider>
 																</FolderContextProvider>

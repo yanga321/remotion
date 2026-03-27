@@ -1,7 +1,9 @@
-import { getStaticFiles, reevaluateComposition } from "@remotion/studio";
-import { useState } from "react";
-import React, { useEffect } from "react";
-import { watchPublicFolder } from "@remotion/studio";
+import {
+  getStaticFiles,
+  reevaluateComposition,
+  watchPublicFolder,
+} from "@remotion/studio";
+import React, { useEffect, useState } from "react";
 import { useRemotionEnvironment } from "remotion";
 
 const getCurrentHash = () => {
@@ -33,7 +35,7 @@ export const RefreshOnCodeChange: React.FC = () => {
     return () => {
       cancel();
     };
-  }, [files, env.isReadOnlyStudio]);
+  }, [files, env.isReadOnlyStudio, env.isStudio]);
 
   return null;
 };

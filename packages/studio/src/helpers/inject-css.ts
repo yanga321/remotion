@@ -11,6 +11,7 @@ const makeDefaultGlobalCSS = () => {
 	return `
   html {
     --remotion-cli-internals-blue: #0b84f3;
+    --remotion-cli-internals-blue-hovered: #4da3f7;
     overscroll-behavior-y: none;
     overscroll-behavior-x: none;
   }
@@ -21,9 +22,10 @@ const makeDefaultGlobalCSS = () => {
     /* Override Chakra UI position: relative on body */
     position: static !important;
   }
-  
+
   .remotion-splitter {
     user-select: none;
+    -webkit-user-select: none;
   }
   
   .remotion-splitter-horizontal {
@@ -82,7 +84,7 @@ const makeDefaultGlobalCSS = () => {
   
   input:focus,
   textarea:focus,
-  button:focus,
+  button:focus:not(.__remotion_input_dragger),
   a:focus {
     outline: none;
     box-shadow:
@@ -141,6 +143,10 @@ const makeDefaultGlobalCSS = () => {
     background-color: white;
     position: relative;
   }  
+
+  .__remotion_input_dragger:hover span {
+    color: var(--remotion-cli-internals-blue-hovered) !important;
+  }
 
   .${DEFAULT_PROPS_PATH_ACTIVE_CLASSNAME} span {
     color: var(--remotion-cli-internals-blue) !important;

@@ -1,8 +1,8 @@
-import {BundlerInternals} from '@remotion/bundler';
 import {describe, expect, test} from 'bun:test';
 import fs from 'fs';
 import {tmpdir} from 'os';
 import path from 'path';
+import {BundlerInternals} from '@remotion/bundler';
 
 test('Should not be able to bundle @remotion/lambda directly', async () => {
 	expect(() =>
@@ -28,7 +28,11 @@ describe('Should be able to bundle @remotion/lambda/client with ESBuild', () => 
 			entryPoints: [require.resolve('@remotion/lambda/client')],
 		});
 		expect(errors.length).toBe(0);
-		expect(warnings.length).toBe(0);
+		// AWS SDK code compares with -0 using ===, which is fine but triggers an esbuild warning
+		const unexpectedWarnings = warnings.filter(
+			(w) => w.id !== 'equals-negative-zero',
+		);
+		expect(unexpectedWarnings.length).toBe(0);
 
 		// Should not include remotion or react
 		const contents = fs.readFileSync(outfile, 'utf-8');

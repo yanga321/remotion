@@ -2,7 +2,6 @@ import type React from 'react';
 import {useCallback, useContext, useEffect} from 'react';
 import type {_InternalTypes} from 'remotion';
 import {Internals} from 'remotion';
-import {getStaticFiles} from '../api/get-static-files';
 import {useMobileLayout} from '../helpers/mobile-layout';
 import type {ExpandedFoldersState} from '../helpers/persist-open-folders';
 import {getRoute, pushUrl} from '../helpers/url-state';
@@ -11,6 +10,7 @@ import {SidebarContext} from '../state/sidebar';
 import {getKeysToExpand} from './CompositionSelector';
 import {explorerSidebarTabs} from './ExplorerPanel';
 import {deriveCanvasContentFromUrl} from './load-canvas-content-from-url';
+import {useStaticFiles} from './use-static-files';
 
 export const useSelectAsset = () => {
 	const {setCanvasContent} = useContext(Internals.CompositionSetters);
@@ -88,13 +88,32 @@ export const InitialCompositionLoader: React.FC = () => {
 	const {setCanvasContent} = useContext(Internals.CompositionSetters);
 	const selectComposition = useSelectComposition();
 	const selectAsset = useSelectAsset();
+	const staticFiles = useStaticFiles();
 
 	useEffect(() => {
+		const canvasContentFromUrl = deriveCanvasContentFromUrl();
+
 		if (canvasContent) {
+			// If the URL points to a different composition than the one currently
+			// displayed, switch to it. This handles the case where the URL is
+			// updated externally (e.g. after duplicating a composition).
+			if (
+				canvasContentFromUrl &&
+				canvasContentFromUrl.type === 'composition' &&
+				canvasContent.type === 'composition' &&
+				canvasContentFromUrl.compositionId !== canvasContent.compositionId
+			) {
+				const exists = compositions.find(
+					(c) => c.id === canvasContentFromUrl.compositionId,
+				);
+				if (exists) {
+					selectComposition(exists, false);
+				}
+			}
+
 			return;
 		}
 
-		const canvasContentFromUrl = deriveCanvasContentFromUrl();
 		if (canvasContentFromUrl && canvasContentFromUrl.type === 'composition') {
 			const exists = compositions.find(
 				(c) => c.id === canvasContentFromUrl.compositionId,
@@ -141,7 +160,6 @@ export const InitialCompositionLoader: React.FC = () => {
 			}
 
 			if (newCanvas && newCanvas.type === 'asset') {
-				const staticFiles = getStaticFiles();
 				const exists = staticFiles.find((file) => {
 					return file.name === newCanvas.asset;
 				});
@@ -159,7 +177,7 @@ export const InitialCompositionLoader: React.FC = () => {
 		window.addEventListener('popstate', onchange);
 
 		return () => window.removeEventListener('popstate', onchange);
-	}, [compositions, selectComposition, setCanvasContent]);
+	}, [compositions, selectComposition, setCanvasContent, staticFiles]);
 
 	return null;
 };

@@ -1,6 +1,6 @@
+import {expect, test} from 'bun:test';
 // eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import * as zodTypes from '@remotion/zod-types';
-import {expect, test} from 'bun:test';
 // eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import {zMatrix} from '@remotion/zod-types';
 // eslint-disable-next-line @typescript-eslint/no-restricted-imports
@@ -43,9 +43,9 @@ test('Extract Zod enums #2', () => {
 				),
 				tuples: z.tuple([z.enum(['a']), z.enum(['b'])]).optional(),
 				abc: z
-					.record(z.enum(['a', 'b', 'c']))
+					.record(z.enum(['a', 'b', 'c']), z.unknown())
 					.nullable()
-					.default({}),
+					.default(() => null),
 				branded: z.object({a: z.enum(['a'])}).brand('branded'),
 			}),
 			zodRuntime: z,

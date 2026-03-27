@@ -12,12 +12,6 @@ import React, {
 } from 'react';
 import type {CurrentScaleContextType} from 'remotion';
 import {Internals} from 'remotion';
-import type {RenderMuteButton} from './MediaVolumeSlider.js';
-import type {
-	RenderFullscreenButton,
-	RenderPlayPauseButton,
-} from './PlayerControls.js';
-import {Controls} from './PlayerControls.js';
 import type {BrowserMediaControlsBehavior} from './browser-mediasession.js';
 import {
 	calculateCanvasTransformation,
@@ -27,8 +21,18 @@ import {
 } from './calculate-scale.js';
 import {ErrorBoundary} from './error-boundary.js';
 import {RenderWarningIfBlacklist} from './license-blacklist.js';
+import type {RenderMuteButton} from './MediaVolumeSlider.js';
 import {playerCssClassname} from './player-css-classname.js';
-import type {PlayerMethods, PlayerRef} from './player-methods.js';
+import type {
+	PlayerMethods,
+	PlayerRef,
+	RenderCustomControls,
+} from './player-methods.js';
+import type {
+	RenderFullscreenButton,
+	RenderPlayPauseButton,
+} from './PlayerControls.js';
+import {Controls} from './PlayerControls.js';
 import type {RenderVolumeSlider} from './render-volume-slider.js';
 import {usePlayback} from './use-playback.js';
 import {usePlayer} from './use-player.js';
@@ -84,6 +88,7 @@ const PlayerUI: React.ForwardRefRenderFunction<
 		readonly renderFullscreen: RenderFullscreenButton | null;
 		readonly renderMuteButton: RenderMuteButton | null;
 		readonly renderVolumeSlider: RenderVolumeSlider | null;
+		readonly renderCustomControls: RenderCustomControls | null;
 		readonly alwaysShowControls: boolean;
 		readonly showPlaybackRateControl: boolean | number[];
 		readonly posterFillMode: PosterFillMode;
@@ -124,6 +129,7 @@ const PlayerUI: React.ForwardRefRenderFunction<
 		renderPlayPauseButton,
 		renderMuteButton,
 		renderVolumeSlider,
+		renderCustomControls,
 		alwaysShowControls,
 		showPlaybackRateControl,
 		posterFillMode,
@@ -156,8 +162,8 @@ const PlayerUI: React.ForwardRefRenderFunction<
 
 		return Boolean(
 			document.fullscreenEnabled ||
-				// @ts-expect-error Types not defined
-				document.webkitFullscreenEnabled,
+			// @ts-expect-error Types not defined
+			document.webkitFullscreenEnabled,
 		);
 	}, []);
 
@@ -433,7 +439,7 @@ const PlayerUI: React.ForwardRefRenderFunction<
 
 				if (vol < 0 || vol > 1) {
 					throw new TypeError(
-						`setVolume() got a number that is out of range. Must be between 0 and 1, got ${typeof vol}`,
+						`setVolume() got a number that is out of range. Must be between 0 and 1, got ${vol}`,
 					);
 				}
 
@@ -707,6 +713,7 @@ const PlayerUI: React.ForwardRefRenderFunction<
 					}
 					renderMuteButton={renderMuteButton}
 					renderVolumeSlider={renderVolumeSlider}
+					renderCustomControls={renderCustomControls}
 				/>
 			) : null}
 		</>

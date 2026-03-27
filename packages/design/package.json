@@ -1,6 +1,6 @@
 {
 	"name": "@remotion/design",
-	"version": "4.0.410",
+	"version": "4.0.441",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"module": "dist/esm/index.mjs",
@@ -13,10 +13,11 @@
 		"url": "https://github.com/remotion-dev/remotion/issues"
 	},
 	"scripts": {
-		"formatting": "prettier --experimental-cli src --check",
+		"formatting": "oxfmt src --check",
+		"format": "oxfmt src",
 		"lint": "eslint src",
-		"watch": "tsc -w",
-		"make": "tsc -d && bun --env-file=../.env.bundle bundle.ts"
+		"watch": "tsgo -w",
+		"make": "tsgo -d && bun --env-file=../.env.bundle bundle.ts"
 	},
 	"dependencies": {
 		"@remotion/paths": "workspace:*",
@@ -37,10 +38,11 @@
 		"eslint": "catalog:",
 		"react": "catalog:",
 		"react-dom": "catalog:",
-		"tailwindcss": "4.1.1",
-		"@tailwindcss/cli": "4.1.1",
+		"tailwindcss": "4.2.0",
+		"@tailwindcss/cli": "4.2.0",
 		"tailwind-merge": "^2.6.0",
-		"bun-plugin-tailwind": "0.1.2"
+		"bun-plugin-tailwind": "0.1.2",
+		"@typescript/native-preview": "catalog:"
 	},
 	"keywords": [],
 	"publishConfig": {

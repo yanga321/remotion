@@ -1,11 +1,11 @@
+import type {Dirent} from 'node:fs';
+import {createReadStream, promises as fs} from 'node:fs';
+import path from 'node:path';
 import {Upload} from '@aws-sdk/lib-storage';
 import type {AwsRegion, RequestHandler} from '@remotion/lambda-client';
 import {LambdaClientInternals} from '@remotion/lambda-client';
 import type {Privacy, UploadDirProgress} from '@remotion/serverless';
 import mimeTypes from 'mime-types';
-import type {Dirent} from 'node:fs';
-import {createReadStream, promises as fs} from 'node:fs';
-import path from 'node:path';
 import {makeS3Key} from '../shared/make-s3-key';
 
 type FileInfo = {
@@ -59,6 +59,18 @@ async function getFiles(
 
 const limit = LambdaClientInternals.pLimit(5);
 
+type UploadDirInput = {
+	bucket: string;
+	region: AwsRegion;
+	localDir: string;
+	keyPrefix: string;
+	onProgress: (progress: UploadDirProgress) => void;
+	privacy: Privacy;
+	toUpload: string[];
+	forcePathStyle: boolean;
+	requestHandler: RequestHandler | null;
+};
+
 export const uploadDir = async ({
 	bucket,
 	region,
@@ -69,17 +81,7 @@ export const uploadDir = async ({
 	toUpload,
 	forcePathStyle,
 	requestHandler,
-}: {
-	bucket: string;
-	region: AwsRegion;
-	localDir: string;
-	keyPrefix: string;
-	onProgress: (progress: UploadDirProgress) => void;
-	privacy: Privacy;
-	toUpload: string[];
-	forcePathStyle: boolean;
-	requestHandler: RequestHandler | null;
-}) => {
+}: UploadDirInput): Promise<void> => {
 	const files = await getFiles(localDir, localDir, toUpload);
 	const progresses: {[key: string]: number} = {};
 	for (const file of files) {

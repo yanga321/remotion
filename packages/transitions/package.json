@@ -3,7 +3,7 @@
 		"url": "https://github.com/remotion-dev/remotion/tree/main/packages/transitions"
 	},
 	"name": "@remotion/transitions",
-	"version": "4.0.410",
+	"version": "4.0.441",
 	"description": "Library for creating transitions in Remotion",
 	"sideEffects": false,
 	"main": "dist/esm/index.mjs",
@@ -12,8 +12,9 @@
 	"scripts": {
 		"test": "bun test src",
 		"lint": "eslint src",
-		"formatting": "prettier --experimental-cli src --check",
-		"make": "tsc -d && bun --env-file=../.env.bundle bundle.ts"
+		"formatting": "oxfmt src --check",
+		"format": "oxfmt src",
+		"make": "tsgo -d && bun --env-file=../.env.bundle bundle.ts"
 	},
 	"author": "Jonny Burger",
 	"contributors": [],
@@ -34,7 +35,8 @@
 		"@remotion/test-utils": "workspace:*",
 		"@remotion/player": "workspace:*",
 		"@remotion/eslint-config-internal": "workspace:*",
-		"eslint": "catalog:"
+		"eslint": "catalog:",
+		"@typescript/native-preview": "catalog:"
 	},
 	"peerDependencies": {
 		"react": ">=16.8.0",

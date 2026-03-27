@@ -1,8 +1,8 @@
-import {LambdaClientInternals} from '@remotion/lambda-client';
 import {beforeAll, expect, test} from 'bun:test';
 import {execSync} from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import {LambdaClientInternals} from '@remotion/lambda-client';
 import {VERSION} from 'remotion';
 
 const rubySdk = path.join(__dirname, '..', '..', '..', 'lambda-ruby');
@@ -100,6 +100,8 @@ test('Render Media payload', async () => {
 			forceBucketName: null,
 			forceHeight: null,
 			forceWidth: null,
+			forceDurationInFrames: null,
+			forceFps: null,
 			frameRange: null,
 			framesPerLambda: null,
 			imageFormat: 'jpeg',
@@ -168,6 +170,8 @@ test('Render Still payload', async () => {
 			forceBucketName: null,
 			forceHeight: null,
 			forceWidth: null,
+			forceDurationInFrames: null,
+			forceFps: null,
 			imageFormat: 'jpeg',
 			jpegQuality: 80,
 			logLevel: 'info',

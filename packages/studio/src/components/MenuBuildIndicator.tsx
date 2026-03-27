@@ -1,8 +1,8 @@
 import React, {useContext, useEffect, useState} from 'react';
 import {StudioServerConnectionCtx} from '../helpers/client-id';
+import {Spacing} from './layout';
 import {OpenEditorButton} from './OpenEditorButton';
 import {Spinner} from './Spinner';
-import {Spacing} from './layout';
 
 const cwd: React.CSSProperties = {
 	fontSize: 13,
@@ -10,6 +10,7 @@ const cwd: React.CSSProperties = {
 	display: 'flex',
 	alignItems: 'center',
 	justifyContent: 'center',
+	userSelect: 'none',
 };
 
 const spinnerSize = 14;

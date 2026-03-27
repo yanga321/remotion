@@ -6,13 +6,18 @@ import {
 } from '../../helpers/retry-payload';
 import {ModalsContext} from '../../state/modals';
 import {Button} from '../Button';
+import {Flex, SPACING_UNIT} from '../layout';
 import {HORIZONTAL_SCROLLBAR_CLASSNAME} from '../Menu/is-menu-item';
 import {ModalContainer} from '../ModalContainer';
 import {ModalHeader} from '../ModalHeader';
 import {showNotification} from '../Notifications/NotificationCenter';
 import {cancelRenderJob, removeRenderJob} from '../RenderQueue/actions';
+import type {
+	ClientStillRenderJob,
+	ClientVideoRenderJob,
+} from '../RenderQueue/client-side-render-types';
+import {isRestoredClientJob} from '../RenderQueue/client-side-render-types';
 import {isClientRenderJob, RenderQueueContext} from '../RenderQueue/context';
-import {Flex, SPACING_UNIT} from '../layout';
 import {ClientRenderProgress} from './ClientRenderProgress';
 import {GuiRenderStatus} from './GuiRenderStatus';
 
@@ -63,7 +68,13 @@ export const RenderStatusModal: React.FC<{readonly jobId: string}> = ({
 
 	const onRetry = useCallback(() => {
 		if (isClientJob) {
-			const retryPayload = makeClientRetryPayload(job);
+			if (isRestoredClientJob(job)) {
+				return;
+			}
+
+			const retryPayload = makeClientRetryPayload(
+				job as ClientStillRenderJob | ClientVideoRenderJob,
+			);
 			setSelectedModal(retryPayload);
 		} else {
 			const retryPayload = makeRetryPayload(job);

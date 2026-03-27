@@ -1,5 +1,7 @@
 // Prints to CLI and also reports back to browser
 
+import {existsSync, mkdirSync} from 'node:fs';
+import path from 'node:path';
 import type {
 	Browser,
 	BrowserExecutable,
@@ -11,18 +13,16 @@ import type {
 	StillImageFormat,
 } from '@remotion/renderer';
 import {RenderInternals} from '@remotion/renderer';
+import {BrowserSafeApis} from '@remotion/renderer/client';
 import type {
 	AggregateRenderProgress,
 	JobProgressCallback,
 } from '@remotion/studio-server';
 import type {BrowserDownloadState} from '@remotion/studio-shared';
-import {existsSync, mkdirSync} from 'node:fs';
-import path from 'node:path';
 import {NoReactInternals} from 'remotion/no-react';
 import {defaultBrowserDownloadProgress} from '../browser-download-bar';
 import {chalk} from '../chalk';
 import {registerCleanupJob} from '../cleanup-before-quit';
-import {ConfigInternals} from '../config';
 import {determineFinalStillImageFormat} from '../determine-image-format';
 import {getAndValidateAbsoluteOutputFile} from '../get-cli-options';
 import {getCompositionWithDimensionOverride} from '../get-composition-with-dimension-override';
@@ -58,6 +58,9 @@ export const renderStillFlow = async ({
 	chromiumOptions,
 	envVariables,
 	height,
+	width,
+	fps,
+	durationInFrames,
 	serializedInputPropsWithCustomSchema,
 	overwrite,
 	port,
@@ -66,7 +69,6 @@ export const renderStillFlow = async ({
 	jpegQuality,
 	scale,
 	stillFrame,
-	width,
 	compositionIdFromUi,
 	imageFormatFromUi,
 	logLevel,
@@ -82,9 +84,12 @@ export const renderStillFlow = async ({
 	offthreadVideoThreads,
 	audioLatencyHint,
 	mediaCacheSizeInBytes,
+	rspack,
 	askAIEnabled,
 	experimentalClientSideRenderingEnabled,
+	experimentalVisualModeEnabled,
 	keyboardShortcutsEnabled,
+	shouldCache,
 }: {
 	remotionRoot: string;
 	fullEntryPoint: string;
@@ -104,6 +109,8 @@ export const renderStillFlow = async ({
 	publicDir: string | null;
 	height: number | null;
 	width: number | null;
+	fps: number | null;
+	durationInFrames: number | null;
 	compositionIdFromUi: string | null;
 	imageFormatFromUi: StillImageFormat | null;
 	logLevel: LogLevel;
@@ -119,9 +126,12 @@ export const renderStillFlow = async ({
 	chromeMode: ChromeMode;
 	audioLatencyHint: AudioContextLatencyCategory | null;
 	mediaCacheSizeInBytes: number | null;
+	rspack: boolean;
 	askAIEnabled: boolean;
 	experimentalClientSideRenderingEnabled: boolean;
+	experimentalVisualModeEnabled: boolean;
 	keyboardShortcutsEnabled: boolean;
+	shouldCache: boolean;
 }) => {
 	const isVerbose = RenderInternals.isEqualOrBelowLogLevel(logLevel, 'verbose');
 	Log.verbose(
@@ -223,8 +233,11 @@ export const renderStillFlow = async ({
 			publicPath,
 			audioLatencyHint,
 			experimentalClientSideRenderingEnabled,
+			experimentalVisualModeEnabled,
 			askAIEnabled,
 			keyboardShortcutsEnabled,
+			rspack,
+			shouldCache,
 		},
 	);
 
@@ -255,6 +268,8 @@ export const renderStillFlow = async ({
 		await getCompositionWithDimensionOverride({
 			height,
 			width,
+			fps,
+			durationInFrames,
 			args: remainingArgs,
 			compositionIdFromUi,
 			browserExecutable,
@@ -277,9 +292,10 @@ export const renderStillFlow = async ({
 		});
 
 	const {format: imageFormat, source} = determineFinalStillImageFormat({
-		cliFlag: parsedCli['image-format'] ?? null,
-		configImageFormat:
-			ConfigInternals.getUserPreferredStillImageFormat() ?? null,
+		configuredImageFormat:
+			BrowserSafeApis.options.stillImageFormatOption.getValue({
+				commandLine: parsedCli,
+			}).value,
 		downloadName: null,
 		outName: getUserPassedOutputLocation(
 			argsAfterComposition,

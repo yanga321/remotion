@@ -1,3 +1,4 @@
+import type {StorageClass} from '@aws-sdk/client-s3';
 import type {
 	_InternalTypes,
 	AudioCodec,
@@ -29,11 +30,9 @@ import {
 	validateDownloadBehavior,
 	VERSION,
 } from '@remotion/serverless-client';
+import {validateWebhook} from '@remotion/serverless-client';
 import type {AwsProvider} from './aws-provider';
 import {awsImplementation} from './aws-provider';
-
-import type {StorageClass} from '@aws-sdk/client-s3';
-import {validateWebhook} from '@remotion/serverless-client';
 import type {GetRenderProgressInput} from './get-render-progress';
 import type {AwsRegion} from './regions';
 import type {RenderStillOnLambdaNonNullInput} from './render-still-on-lambda';
@@ -78,6 +77,8 @@ export type InnerRenderMediaOnLambdaInput = {
 	webhook: WebhookOption | null;
 	forceWidth: number | null;
 	forceHeight: number | null;
+	forceFps: number | null;
+	forceDurationInFrames: number | null;
 	rendererFunctionName: string | null;
 	forceBucketName: string | null;
 	audioCodec: AudioCodec | null;
@@ -124,6 +125,8 @@ export const makeLambdaRenderMediaPayload = async ({
 	audioCodec,
 	forceHeight,
 	forceWidth,
+	forceFps,
+	forceDurationInFrames,
 	webhook,
 	videoBitrate,
 	encodingMaxRate,
@@ -174,6 +177,7 @@ export const makeLambdaRenderMediaPayload = async ({
 		forcePathStyle: forcePathStyle ?? false,
 		skipPutAcl: privacy === 'no-acl',
 		requestHandler: requestHandler ?? null,
+		logLevel,
 	});
 	return {
 		rendererFunctionName,
@@ -212,6 +216,8 @@ export const makeLambdaRenderMediaPayload = async ({
 		webhook: webhook ?? null,
 		forceHeight: forceHeight ?? null,
 		forceWidth: forceWidth ?? null,
+		forceFps: forceFps ?? null,
+		forceDurationInFrames: forceDurationInFrames ?? null,
 		bucketName: bucketName ?? null,
 		audioCodec: audioCodec ?? null,
 		type: ServerlessRoutines.start,
@@ -266,6 +272,8 @@ export const makeLambdaRenderStillPayload = async ({
 	downloadBehavior,
 	forceHeight,
 	forceWidth,
+	forceFps,
+	forceDurationInFrames,
 	forceBucketName,
 	offthreadVideoCacheSizeInBytes,
 	deleteAfter,
@@ -298,6 +306,7 @@ export const makeLambdaRenderStillPayload = async ({
 		forcePathStyle,
 		skipPutAcl: privacy === 'no-acl',
 		requestHandler,
+		logLevel,
 	});
 
 	return {
@@ -320,6 +329,8 @@ export const makeLambdaRenderStillPayload = async ({
 		version: VERSION,
 		forceHeight,
 		forceWidth,
+		forceFps,
+		forceDurationInFrames,
 		bucketName: forceBucketName,
 		offthreadVideoCacheSizeInBytes,
 		deleteAfter,

@@ -1,17 +1,18 @@
 import React, {useCallback, useEffect, useMemo} from 'react';
+import {useContext} from 'react';
 import type {SerializedJSONWithCustomFields} from 'remotion';
 import {NoReactInternals} from 'remotion/no-react';
-import type {z} from 'zod';
+import {StudioServerConnectionCtx} from '../../helpers/client-id';
 import {FAIL_COLOR} from '../../helpers/colors';
-import {setUnsavedProps} from '../../helpers/document-title';
-import {useKeybinding} from '../../helpers/use-keybinding';
 import {Button} from '../Button';
+import {Flex, Row, Spacing} from '../layout';
 import {RemTextarea} from '../NewComposition/RemTextarea';
 import {ValidationMessage} from '../NewComposition/ValidationMessage';
-import {Flex, Row, Spacing} from '../layout';
 import type {State} from './DataEditor';
-import {ZodErrorMessages} from './SchemaEditor/ZodErrorMessages';
 import {deepEqual} from './SchemaEditor/deep-equal';
+import type {AnyZodSchema} from './SchemaEditor/zod-schema-type';
+import {zodSafeParse} from './SchemaEditor/zod-schema-type';
+import {ZodErrorMessages} from './SchemaEditor/ZodErrorMessages';
 
 const style: React.CSSProperties = {
 	fontFamily: 'monospace',
@@ -25,10 +26,31 @@ const scrollable: React.CSSProperties = {
 	flex: 1,
 };
 
-const parseJSON = (str: string, schema: z.ZodTypeAny): State => {
+const parseJS = (
+	value: Record<string, unknown>,
+	schema: AnyZodSchema,
+): State => {
+	try {
+		const zodValidation = zodSafeParse(schema, value);
+		return {
+			str: JSON.stringify(value, null, 2),
+			value,
+			validJSON: true,
+			zodValidation,
+		};
+	} catch (e) {
+		return {
+			str: JSON.stringify(value, null, 2),
+			validJSON: false,
+			error: (e as Error).message,
+		};
+	}
+};
+
+const parseJSON = (str: string, schema: AnyZodSchema): State => {
 	try {
 		const value = NoReactInternals.deserializeJSONWithSpecialTypes(str);
-		const zodValidation = schema.safeParse(value);
+		const zodValidation = zodSafeParse(schema, value);
 		return {str, value, validJSON: true, zodValidation};
 	} catch (e) {
 		return {str, validJSON: false, error: (e as Error).message};
@@ -41,27 +63,49 @@ export const RenderModalJSONPropsEditor: React.FC<{
 		React.SetStateAction<Record<string, unknown>>
 	>;
 	readonly onSave: () => void;
-	readonly showSaveButton: boolean;
 	readonly serializedJSON: SerializedJSONWithCustomFields | null;
 	readonly defaultProps: Record<string, unknown>;
-	readonly schema: z.ZodTypeAny;
+	readonly schema: AnyZodSchema;
+	readonly compositionId: string;
 }> = ({
 	setValue,
 	value,
 	defaultProps,
 	onSave,
-	showSaveButton,
 	serializedJSON,
 	schema,
+	compositionId,
 }) => {
 	if (serializedJSON === null) {
 		throw new Error('expecting serializedJSON to be defined');
 	}
 
-	const keybindings = useKeybinding();
+	const {subscribeToEvent} = useContext(StudioServerConnectionCtx);
+
 	const [localValue, setLocalValue] = React.useState<State>(() => {
 		return parseJSON(serializedJSON.serializedString, schema);
 	});
+
+	useEffect(() => {
+		const unsub = subscribeToEvent('default-props-updatable-changed', (e) => {
+			if (e.type !== 'default-props-updatable-changed') {
+				return;
+			}
+
+			if (e.compositionId !== compositionId) {
+				return;
+			}
+
+			const {result} = e;
+			if (result.canUpdate) {
+				setLocalValue(parseJS(result.currentDefaultProps, schema));
+			}
+		});
+
+		return () => {
+			unsub();
+		};
+	}, [subscribeToEvent, compositionId, schema]);
 
 	const onPretty = useCallback(() => {
 		if (!localValue.validJSON) {
@@ -75,63 +119,32 @@ export const RenderModalJSONPropsEditor: React.FC<{
 	const onChange: React.ChangeEventHandler<HTMLTextAreaElement> = useCallback(
 		(e) => {
 			const parsed = parseJSON(e.target.value, schema);
-
-			if (parsed.validJSON) {
-				const validationResult = schema.safeParse(parsed.value);
-				setLocalValue({
-					str: e.target.value,
-					value: parsed.value,
-					validJSON: parsed.validJSON,
-					zodValidation: validationResult,
-				});
-				if (validationResult.success) {
-					setValue(parsed.value);
-				}
-			} else {
-				setLocalValue({
-					str: e.target.value,
-					validJSON: parsed.validJSON,
-					error: parsed.error,
-				});
+			setLocalValue(parsed);
+			if (parsed.validJSON && parsed.zodValidation.success) {
+				setValue(parsed.value);
 			}
 		},
 		[schema, setValue],
 	);
 
+	const hasError = useMemo(() => {
+		return !localValue.validJSON || !localValue.zodValidation.success;
+	}, [localValue]);
+
 	const hasChanged = useMemo(() => {
 		return !deepEqual(value, defaultProps);
 	}, [defaultProps, value]);
 
-	useEffect(() => {
-		setUnsavedProps(hasChanged);
-	}, [hasChanged]);
-
 	const onQuickSave = useCallback(() => {
-		if (hasChanged) {
+		if (hasChanged && !hasError) {
 			onSave();
 		}
-	}, [hasChanged, onSave]);
+	}, [hasChanged, hasError, onSave]);
 
 	// If schema is changed in code
 	useEffect(() => {
 		setLocalValue(parseJSON(localValue.str, schema));
 	}, [localValue.str, schema]);
-
-	useEffect(() => {
-		const save = keybindings.registerKeybinding({
-			event: 'keydown',
-			key: 's',
-			commandCtrlKey: true,
-			callback: onQuickSave,
-			preventDefault: true,
-			triggerIfInputFieldFocused: true,
-			keepRegisteredWhenNotHighestContext: false,
-		});
-
-		return () => {
-			save.unregister();
-		};
-	}, [keybindings, onQuickSave, onSave]);
 
 	const reset = useCallback(() => {
 		setValue(defaultProps);
@@ -139,8 +152,7 @@ export const RenderModalJSONPropsEditor: React.FC<{
 	}, [defaultProps, schema, setValue]);
 
 	const textAreaStyle: React.CSSProperties = useMemo(() => {
-		const fail = !localValue.validJSON || !localValue.zodValidation.success;
-		if (!fail) {
+		if (!hasError) {
 			return style;
 		}
 
@@ -148,29 +160,32 @@ export const RenderModalJSONPropsEditor: React.FC<{
 			...style,
 			borderColor: FAIL_COLOR,
 		};
-	}, [localValue]);
+	}, [hasError]);
 
 	return (
 		<div style={scrollable}>
 			<RemTextarea
 				onChange={onChange}
+				onBlur={onQuickSave}
 				value={localValue.str}
 				status={localValue.validJSON ? 'ok' : 'error'}
 				style={textAreaStyle}
 			/>
 			<Spacing y={1} />
-			{localValue.validJSON === false ? (
-				<ValidationMessage
-					align="flex-start"
-					message={localValue.error}
-					type="error"
-				/>
-			) : localValue.zodValidation.success === false ? (
-				<ZodErrorMessages
-					zodValidationResult={localValue.zodValidation}
-					viewTab="json"
-				/>
-			) : null}
+			<div data-testid="json-props-error">
+				{localValue.validJSON === false ? (
+					<ValidationMessage
+						align="flex-start"
+						message={localValue.error}
+						type="error"
+					/>
+				) : localValue.zodValidation.success === false ? (
+					<ZodErrorMessages
+						zodValidationResult={localValue.zodValidation}
+						viewTab="json"
+					/>
+				) : null}
+			</div>
 			<Spacing y={1} />
 			<Row>
 				<Button
@@ -184,18 +199,6 @@ export const RenderModalJSONPropsEditor: React.FC<{
 					Format
 				</Button>
 				<Spacing x={1} />
-				{showSaveButton ? (
-					<Button
-						onClick={onSave}
-						disabled={
-							!(localValue.validJSON && localValue.zodValidation.success) ||
-							!localValue.validJSON ||
-							!hasChanged
-						}
-					>
-						Save
-					</Button>
-				) : null}
 			</Row>
 		</div>
 	);

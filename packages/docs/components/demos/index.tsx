@@ -3,10 +3,10 @@ import {Player} from '@remotion/player';
 import React, {useCallback, useMemo, useState} from 'react';
 import {AbsoluteFill} from 'remotion';
 import {Control} from './control';
-import styles from './styles.module.css';
 import type {DemoType} from './types';
 import {
 	animationMathDemo,
+	arrowDemo,
 	circleDemo,
 	clockWipePresentationDemo,
 	cubePresentationDemo,
@@ -17,6 +17,8 @@ import {
 	flipPresentationDemo,
 	heartDemo,
 	irisPresentationDemo,
+	lightLeakDemo,
+	starburstDemo,
 	noiseDemo,
 	nonePresentationDemo,
 	opacityDemo,
@@ -26,16 +28,21 @@ import {
 	rotateDemo,
 	roundedTextBoxDemo,
 	scaleDemo,
+	shaderDemo,
 	skewDemo,
 	slidePresentationDemo,
 	slidePresentationDemoLongThreshold,
 	springDampingDemo,
 	springDemo,
 	starDemo,
+	transitionSeriesEnterExitDemo,
+	transitionSeriesOverlayDemo,
+	transitionSeriesTransitionDemo,
 	translateDemo,
 	triangleDemo,
 	wipePresentationDemo,
 } from './types';
+import styles from './styles.module.css';
 
 const container: React.CSSProperties = {
 	overflow: 'hidden',
@@ -47,6 +54,7 @@ const container: React.CSSProperties = {
 
 const demos: DemoType[] = [
 	noiseDemo,
+	arrowDemo,
 	triangleDemo,
 	rectDemo,
 	circleDemo,
@@ -75,6 +83,12 @@ const demos: DemoType[] = [
 	roundedTextBoxDemo,
 	springDemo,
 	springDampingDemo,
+	shaderDemo,
+	lightLeakDemo,
+	starburstDemo,
+	transitionSeriesTransitionDemo,
+	transitionSeriesOverlayDemo,
+	transitionSeriesEnterExitDemo,
 ];
 
 export const Demo: React.FC<{
@@ -119,6 +133,7 @@ export const Demo: React.FC<{
 		<div style={container}>
 			<Player
 				key={key}
+				acknowledgeRemotionLicense
 				component={demo.comp}
 				compositionWidth={demo.compWidth}
 				compositionHeight={demo.compHeight}
@@ -159,6 +174,7 @@ export const Demo: React.FC<{
 				}}
 				inputProps={{...state, darkMode: colorMode === 'dark'}}
 				autoPlay={demo.autoPlay}
+				controls={demo.controls}
 				loop
 			/>
 			<div className={styles.containerrow}>

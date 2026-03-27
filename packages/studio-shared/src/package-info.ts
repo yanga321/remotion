@@ -1,11 +1,11 @@
 export const packages = [
 	'svg-3d-engine',
-	'ai-improvements',
 	'animation-utils',
 	'animated-emoji',
 	'astro-example',
 	'babel-loader',
 	'bugs',
+	'brand',
 	'bundler',
 	'cli',
 	'cloudrun',
@@ -72,6 +72,7 @@ export const packages = [
 	'transitions',
 	'media-parser',
 	'zod-types',
+	'zod-types-v3',
 	'webcodecs',
 	'convert',
 	'captions',
@@ -82,6 +83,10 @@ export const packages = [
 	'media',
 	'web-renderer',
 	'design',
+	'light-leaks',
+	'starburst',
+	'vercel',
+	'sfx',
 ] as const;
 
 export type Pkgs = (typeof packages)[number];
@@ -95,16 +100,22 @@ export type ExtraPackage = {
 
 export const extraPackages: ExtraPackage[] = [
 	{
-		name: 'zod',
-		version: '3.22.3',
-		description: 'Schema validation library for defining component props',
-		docsUrl: 'https://www.remotion.dev/docs/schemas',
-	},
-	{
 		name: 'mediabunny',
-		version: '1.29.0',
+		version: '1.39.2',
 		description: 'Multimedia library used by Remotion',
 		docsUrl: 'https://www.remotion.dev/docs/mediabunny/version',
+	},
+	{
+		name: '@mediabunny/ac3',
+		version: '1.39.2',
+		description: 'AC-3 and E-AC-3 audio codec support for Mediabunny',
+		docsUrl: 'https://www.remotion.dev/docs/mediabunny/formats#ac-3-and-e-ac-3',
+	},
+	{
+		name: 'zod',
+		version: '4.3.6',
+		description: 'TypeScript-first schema validation',
+		docsUrl: 'https://zod.dev',
 	},
 ];
 
@@ -133,6 +144,7 @@ export const descriptions: {[key in Pkgs]: string | null} = {
 	preload: 'Preloads assets for use in Remotion',
 	shapes: 'Generate SVG shapes',
 	'zod-types': 'Zod types for Remotion',
+	'zod-types-v3': 'Zod 3.22.3 types for Remotion',
 	gif: 'Embed GIFs in a Remotion video',
 	'eslint-plugin': 'Rules for writing Remotion code',
 	'eslint-config': 'Default configuration for Remotion templates (ESLint <= 8)',
@@ -173,13 +185,13 @@ export const descriptions: {[key in Pkgs]: string | null} = {
 	'lambda-php': null,
 	'lambda-client': null,
 	bugs: null,
+	brand: null,
 	docs: null,
 	'it-tests': null,
 	'react18-tests': null,
 	'lambda-python': null,
 	'lambda-ruby': null,
 	'player-example': null,
-	'ai-improvements': null,
 	skills: null,
 	'discord-poster': null,
 	'docusaurus-plugin': null,
@@ -197,15 +209,19 @@ export const descriptions: {[key in Pkgs]: string | null} = {
 	media: 'Experimental WebCodecs-based media tags',
 	'web-renderer': 'Render videos in the browser (not yet released)',
 	design: 'Design system',
+	'light-leaks': 'Light leak effects for Remotion',
+	starburst: 'Starburst ray effect for Remotion',
+	vercel: 'Render Remotion videos on Vercel Sandbox',
+	sfx: 'Sound effect library',
 };
 export const installableMap: {[key in Pkgs]: boolean} = {
 	'svg-3d-engine': false,
-	'ai-improvements': false,
 	'animation-utils': true,
 	'animated-emoji': true,
 	'astro-example': false,
 	'babel-loader': false,
 	bugs: false,
+	brand: false,
 	bundler: false,
 	cli: false,
 	cloudrun: true,
@@ -273,6 +289,7 @@ export const installableMap: {[key in Pkgs]: boolean} = {
 	transitions: true,
 	'media-parser': true,
 	'zod-types': true,
+	'zod-types-v3': true,
 	webcodecs: true,
 	convert: false,
 	captions: true,
@@ -282,6 +299,10 @@ export const installableMap: {[key in Pkgs]: boolean} = {
 	media: true,
 	'web-renderer': false,
 	design: false,
+	'light-leaks': true,
+	starburst: true,
+	vercel: true,
+	sfx: true,
 };
 
 export const apiDocs: {[key in Pkgs]: string | null} = {
@@ -309,6 +330,7 @@ export const apiDocs: {[key in Pkgs]: string | null} = {
 	preload: 'https://www.remotion.dev/docs/preload',
 	shapes: 'https://www.remotion.dev/docs/shapes',
 	'zod-types': 'https://www.remotion.dev/docs/zod-types',
+	'zod-types-v3': 'https://www.remotion.dev/docs/zod-types/v3',
 	gif: 'https://www.remotion.dev/docs/gif',
 	'eslint-plugin':
 		'https://www.remotion.dev/docs/brownfield#install-the-eslint-plugin',
@@ -319,7 +341,6 @@ export const apiDocs: {[key in Pkgs]: string | null} = {
 	'compositor-linux-x64-gnu': null,
 	'compositor-linux-x64-musl': null,
 	'compositor-darwin-x64': null,
-	'ai-improvements': null,
 	'discord-poster': null,
 	'docusaurus-plugin': null,
 	'animation-utils': 'https://www.remotion.dev/docs/animation-utils/',
@@ -328,6 +349,7 @@ export const apiDocs: {[key in Pkgs]: string | null} = {
 	example: null,
 	'lambda-php': null,
 	bugs: null,
+	brand: null,
 	docs: null,
 	'it-tests': null,
 	'react18-tests': null,
@@ -371,4 +393,8 @@ export const apiDocs: {[key in Pkgs]: string | null} = {
 	media: 'https://remotion.dev/docs/media',
 	'web-renderer': 'https://www.remotion.dev/docs/web-renderer/',
 	design: 'https://www.remotion.dev/design',
+	'light-leaks': 'https://www.remotion.dev/docs/light-leaks',
+	starburst: 'https://www.remotion.dev/docs/starburst',
+	vercel: 'https://www.remotion.dev/docs/vercel/api',
+	sfx: 'https://www.remotion.dev/docs/sfx',
 };

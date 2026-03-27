@@ -15,10 +15,6 @@ If you want to render only a still image, use [renderStill()](/docs/renderer/ren
 In Remotion 3.0, we added the [`renderMedia()`](/docs/renderer/render-media) API which combines `renderFrames()` and `stitchFramesToVideo()` into one simplified step and performs the render faster. Prefer `renderMedia()` if you can.
 :::
 
-:::info
-Configuration in `remotion.config.ts` and CLI flags do not apply to this function. You must pass all options explicitly.
-:::
-
 ## Arguments
 
 Takes an object with the following keys:
@@ -135,7 +131,7 @@ Prefer a specific port that will be used to serve the Remotion project. If not s
 
 ### `frameRange?`
 
-Specify a single frame (passing a `number`) or a range of frames (passing a tuple `[number, number]`) to be rendered. By passing `null` (default) all frames of a composition get rendered.
+Specify a single frame (passing a `number`) or a range of frames (passing a tuple `[number, number]`) to be rendered. By passing `null` (default) all frames of a composition get rendered. Pass `[number, null]` to render from a frame to the end of the composition.<AvailableFrom v="4.0.421" inline />
 
 ### `muted?`<AvailableFrom v="3.2.1" />
 
@@ -270,6 +266,10 @@ _string_
 
 Lets you set a custom user agent that the headless Chrome browser assumes.
 
+#### `darkMode?`<AvailableFrom v="4.0.381"/>
+
+<Options id="dark-mode" />
+
 ### `offthreadVideoCacheSizeInBytes?`<AvailableFrom v="4.0.23"/>
 
 <Options id="offthreadvideo-cache-size-in-bytes" />
@@ -326,12 +326,16 @@ A promise resolving to an object containing the following properties:
 - `frameCount`: `number` - describing how many frames got rendered.
 - `assetsInfo`: `RenderAssetInfo` - information that can be passed to `stitchFramesToVideo()` to mix audio. The shape of this object should be considered as Remotion internals and may change across Remotion versions.
 
+## Compatibility
+
+<CompatibilityTable chrome={false} firefox={false} safari={false} nodejs={true} bun={true} serverlessFunctions={false} clientSideRendering={false} serverSideRendering={true} player={false} studio={false} />
+
 ## See also
 
 - [Source code for this function](https://github.com/remotion-dev/remotion/blob/main/packages/renderer/src/render-frames.ts)
-- [renderMedia()](/docs/renderer/render-media)
-- [bundle()](/docs/bundle)
+- [`renderMedia()`](/docs/renderer/render-media)
+- [`bundle()`](/docs/bundle)
 - [Server-Side rendering](/docs/ssr)
-- [getCompositions()](/docs/renderer/get-compositions)
-- [stitchFramesToVideo()](/docs/renderer/stitch-frames-to-video)
-- [renderStill()](/docs/renderer/render-still)
+- [`getCompositions()`](/docs/renderer/get-compositions)
+- [`stitchFramesToVideo()`](/docs/renderer/stitch-frames-to-video)
+- [`renderStill()`](/docs/renderer/render-still)

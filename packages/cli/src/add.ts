@@ -1,7 +1,7 @@
-import {RenderInternals, type LogLevel} from '@remotion/renderer';
-import {StudioServerInternals} from '@remotion/studio-server';
 import {spawn} from 'node:child_process';
 import fs from 'node:fs';
+import {RenderInternals, type LogLevel} from '@remotion/renderer';
+import {StudioServerInternals} from '@remotion/studio-server';
 import {chalk} from './chalk';
 import {EXTRA_PACKAGES} from './extra-packages';
 import {listOfRemotionPackages} from './list-of-remotion-packages';
@@ -141,11 +141,12 @@ export const addCommand = async ({
 		}
 	}
 
-	const manager = StudioServerInternals.getPackageManager(
+	const manager = StudioServerInternals.getPackageManager({
 		remotionRoot,
 		packageManager,
-		0,
-	);
+		dirUp: 0,
+		logLevel,
+	});
 
 	if (manager === 'unknown') {
 		throw new Error(

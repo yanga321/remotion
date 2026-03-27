@@ -11,7 +11,11 @@ const {
 	publicDirOption,
 	askAIOption,
 	experimentalClientSideRenderingOption,
+	experimentalVisualModeOption,
 	keyboardShortcutsOption,
+	rspackOption,
+	browserExecutableOption,
+	bundleCacheOption,
 } = BrowserSafeApis.options;
 
 export const processVideoJob = async ({
@@ -40,13 +44,21 @@ export const processVideoJob = async ({
 	const keyboardShortcutsEnabled = keyboardShortcutsOption.getValue({
 		commandLine: parsedCli,
 	}).value;
+	const shouldCache = bundleCacheOption.getValue({
+		commandLine: parsedCli,
+	}).value;
 
-	const {browserExecutable, ffmpegOverride} = getCliOptions({
+	const {ffmpegOverride} = getCliOptions({
 		isStill: true,
 		logLevel,
 		indent: true,
 	});
+	const browserExecutable = browserExecutableOption.getValue({
+		commandLine: parsedCli,
+	}).value;
+	const rspack = rspackOption.getValue({commandLine: parsedCli}).value;
 	const fullEntryPoint = convertEntryPointToServeUrl(entryPoint);
+
 	await renderVideoFlow({
 		remotionRoot,
 		browser: 'chrome',
@@ -55,6 +67,9 @@ export const processVideoJob = async ({
 		entryPointReason: 'same as Studio',
 		envVariables: job.envVariables,
 		height: null,
+		width: null,
+		fps: null,
+		durationInFrames: null,
 		fullEntryPoint,
 		serializedInputPropsWithCustomSchema:
 			job.serializedInputPropsWithCustomSchema,
@@ -65,7 +80,6 @@ export const processVideoJob = async ({
 		jpegQuality: job.jpegQuality ?? undefined,
 		remainingArgs: [],
 		scale: job.scale,
-		width: null,
 		compositionIdFromUi: job.compositionId,
 		logLevel: job.logLevel,
 		onProgress,
@@ -116,6 +130,11 @@ export const processVideoJob = async ({
 		experimentalClientSideRenderingEnabled:
 			experimentalClientSideRenderingOption.getValue({commandLine: parsedCli})
 				.value,
+		experimentalVisualModeEnabled: experimentalVisualModeOption.getValue({
+			commandLine: parsedCli,
+		}).value,
 		keyboardShortcutsEnabled,
+		rspack,
+		shouldCache,
 	});
 };

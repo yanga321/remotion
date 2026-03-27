@@ -1,8 +1,9 @@
-import type {z} from 'zod';
+// Schema error messages for studio editor
 import {BACKGROUND, BLUE, LIGHT_TEXT} from '../../../helpers/colors';
 import {Button} from '../../Button';
-import {inlineCodeSnippet} from '../../Menu/styles';
 import {Spacing} from '../../layout';
+import {inlineCodeSnippet} from '../../Menu/styles';
+import type {ZodSafeParseResult} from './zod-schema-type';
 import {ZodErrorMessages} from './ZodErrorMessages';
 
 const explainer: React.CSSProperties = {
@@ -86,7 +87,7 @@ export const NoDefaultProps = () => {
 };
 
 export const InvalidDefaultProps: React.FC<{
-	zodValidationResult: z.SafeParseReturnType<unknown, unknown>;
+	zodValidationResult: ZodSafeParseResult;
 }> = ({zodValidationResult}) => {
 	return (
 		<div style={errorContainer}>
@@ -111,9 +112,8 @@ export const InvalidDefaultProps: React.FC<{
 };
 
 export const InvalidSchema: React.FC<{
-	zodValidationResult: z.SafeParseReturnType<unknown, unknown>;
-	reset: () => void;
-}> = ({zodValidationResult, reset}) => {
+	zodValidationResult: ZodSafeParseResult;
+}> = ({zodValidationResult}) => {
 	return (
 		<div style={errorContainer}>
 			<div style={errorExplanation}>The data does not satisfy the schema:</div>
@@ -124,14 +124,6 @@ export const InvalidSchema: React.FC<{
 			/>
 			<Spacing y={1} block />
 			<div style={errorExplanation}>Fix the schema using the JSON editor.</div>
-			<Spacing y={1} block />
-			<div style={errorExplanation}>
-				Alternatively, reset the data to the{' '}
-				<code style={inlineCodeSnippet}>defaultProps</code> that you have
-				defined.
-			</div>
-			<Spacing y={1} block />
-			<Button onClick={reset}>Reset props</Button>
 		</div>
 	);
 };

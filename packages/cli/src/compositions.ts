@@ -28,7 +28,14 @@ const {
 	darkModeOption,
 	askAIOption,
 	experimentalClientSideRenderingOption,
+	experimentalVisualModeOption,
 	keyboardShortcutsOption,
+	rspackOption,
+	browserExecutableOption,
+	userAgentOption,
+	disableWebSecurityOption,
+	ignoreCertificateErrorsOption,
+	bundleCacheOption,
 } = BrowserSafeApis.options;
 
 export const listCompositionsCommand = async (
@@ -67,19 +74,22 @@ export const listCompositionsCommand = async (
 		reason,
 	);
 
-	const {
-		browserExecutable,
-		envVariables,
-		inputProps,
-		ignoreCertificateErrors,
-		userAgent,
-		disableWebSecurity,
-	} = getCliOptions({
+	const {envVariables, inputProps} = getCliOptions({
 		isStill: false,
 		logLevel,
 		indent: false,
 	});
 
+	const browserExecutable = browserExecutableOption.getValue({
+		commandLine: parsedCli,
+	}).value;
+	const userAgent = userAgentOption.getValue({commandLine: parsedCli}).value;
+	const disableWebSecurity = disableWebSecurityOption.getValue({
+		commandLine: parsedCli,
+	}).value;
+	const ignoreCertificateErrors = ignoreCertificateErrorsOption.getValue({
+		commandLine: parsedCli,
+	}).value;
 	const publicPath = publicPathOption.getValue({commandLine: parsedCli}).value;
 	const timeoutInMilliseconds = delayRenderTimeoutInMillisecondsOption.getValue(
 		{
@@ -125,7 +135,14 @@ export const listCompositionsCommand = async (
 		experimentalClientSideRenderingOption.getValue({
 			commandLine: parsedCli,
 		}).value;
+	const experimentalVisualModeEnabled = experimentalVisualModeOption.getValue({
+		commandLine: parsedCli,
+	}).value;
 	const keyboardShortcutsEnabled = keyboardShortcutsOption.getValue({
+		commandLine: parsedCli,
+	}).value;
+	const rspack = rspackOption.getValue({commandLine: parsedCli}).value;
+	const shouldCache = bundleCacheOption.getValue({
 		commandLine: parsedCli,
 	}).value;
 
@@ -159,8 +176,11 @@ export const listCompositionsCommand = async (
 			publicPath,
 			audioLatencyHint,
 			experimentalClientSideRenderingEnabled,
+			experimentalVisualModeEnabled,
 			askAIEnabled,
 			keyboardShortcutsEnabled,
+			rspack,
+			shouldCache,
 		});
 
 	registerCleanupJob(`Cleanup bundle`, () => cleanupBundle());

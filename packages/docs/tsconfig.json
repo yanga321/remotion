@@ -1,6 +1,5 @@
 {
 	"extends": "../tsconfig.settings.json",
-	"baseUrl": ".",
 	"compilerOptions": {
 		"skipLibCheck": true,
 		"noUnusedLocals": true,
@@ -8,19 +7,20 @@
 		"jsx": "react",
 		"target": "ES2019",
 		"moduleResolution": "node",
+		"resolveJsonModule": true,
 		"noImplicitAny": false,
 		"strictNullChecks": true,
 		"strict": false,
-		"noEmit": true
+		"noEmit": true,
+		"paths": {
+			"@site/*": ["./*"]
+		},
+		"types": [
+			"node",
+			"@docusaurus/module-type-aliases",
+			"@docusaurus/theme-classic"
+		]
 	},
-	"paths": {
-		"@site/*": ["./*"]
-	},
-	"types": [
-		"node",
-		"@docusaurus/module-type-aliases",
-		"@docusaurus/theme-classic"
-	],
 
 	"references": [
 		{"path": "../player"},

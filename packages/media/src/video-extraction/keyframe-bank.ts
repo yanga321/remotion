@@ -1,13 +1,20 @@
 import type {VideoSample, VideoSampleSink} from 'mediabunny';
 import {Internals, type LogLevel} from 'remotion';
-import {SAFE_WINDOW_OF_MONOTONICITY} from '../caches';
+import {getSafeWindowOfMonotonicity} from '../caches';
 import {roundTo4Digits} from '../helpers/round-to-4-digits';
 import {renderTimestampRange} from '../render-timestamp-range';
 import {getAllocationSize} from './get-allocation-size';
 
+// duration can be wrong! we shall not rely on it, but calculate it ourselves
+// https://discord.com/channels/@me/1409810025844838481/1470453477217009745 (Rebunny channel)
+export type VideoSampleWithoutDuration = Omit<VideoSample, 'duration'>;
+
 export type KeyframeBank = {
 	src: string;
-	getFrameFromTimestamp: (timestamp: number) => Promise<VideoSample | null>;
+	getFrameFromTimestamp: (
+		timestamp: number,
+		fps: number,
+	) => Promise<VideoSampleWithoutDuration | null>;
 	prepareForDeletion: (
 		logLevel: LogLevel,
 		reason: string,
@@ -19,7 +26,7 @@ export type KeyframeBank = {
 		timestampInSeconds: number;
 		logLevel: LogLevel;
 	}) => void;
-	hasTimestampInSecond: (timestamp: number) => Promise<boolean>;
+	hasTimestampInSecond: (timestamp: number, fps: number) => Promise<boolean>;
 	addFrame: (frame: VideoSample, logLevel: LogLevel) => void;
 	getOpenFrameCount: () => {
 		size: number;
@@ -50,13 +57,27 @@ export const makeKeyframeBank = async ({
 		roundTo4Digits(initialTimestampRequest),
 	);
 
-	const frames: Record<number, VideoSample> = {};
+	const frames: Record<number, VideoSampleWithoutDuration> = {};
 	const frameTimestamps: number[] = [];
 
 	let hasReachedEndOfVideo = false;
 
 	let lastUsed = Date.now();
 	let allocationSize = 0;
+
+	const getDurationOfFrame = (timestamp: number) => {
+		const index = frameTimestamps.indexOf(timestamp);
+		if (index === -1) {
+			throw new Error(`Frame ${timestamp} not found`);
+		}
+
+		const nextTimestamp = frameTimestamps[index + 1];
+		if (!nextTimestamp) {
+			return null;
+		}
+
+		return nextTimestamp - timestamp;
+	};
 
 	const deleteFrameAtTimestamp = (timestamp: number) => {
 		allocationSize -= getAllocationSize(frames[timestamp]);
@@ -83,11 +104,15 @@ export const makeKeyframeBank = async ({
 				}
 			}
 
-			if (frameTimestamp < timestampInSeconds) {
-				if (!frames[frameTimestamp]) {
-					continue;
-				}
+			if (!frames[frameTimestamp]) {
+				continue;
+			}
 
+			const duration =
+				getDurationOfFrame(frameTimestamp) ??
+				(frames[frameTimestamp] as VideoSample).duration;
+
+			if (frameTimestamp + duration < timestampInSeconds) {
 				deleteFrameAtTimestamp(frameTimestamp);
 				deletedTimestamps.push(frameTimestamp);
 			}
@@ -114,9 +139,12 @@ export const makeKeyframeBank = async ({
 			return true;
 		}
 
+		const duration =
+			getDurationOfFrame(lastFrameTimestamp) ??
+			(lastFrame as VideoSample).duration;
+
 		return (
-			roundTo4Digits(lastFrame.timestamp + lastFrame.duration) >
-			roundTo4Digits(timestamp)
+			roundTo4Digits(lastFrameTimestamp + duration) > roundTo4Digits(timestamp)
 		);
 	};
 
@@ -139,6 +167,7 @@ export const makeKeyframeBank = async ({
 	const ensureEnoughFramesForTimestamp = async (
 		timestampInSeconds: number,
 		logLevel: LogLevel,
+		fps: number,
 	) => {
 		while (!hasDecodedEnoughForTimestamp(timestampInSeconds)) {
 			const sample = await sampleIterator.next();
@@ -149,12 +178,14 @@ export const makeKeyframeBank = async ({
 
 			if (sample.done) {
 				hasReachedEndOfVideo = true;
+
 				break;
 			}
 
 			deleteFramesBeforeTimestamp({
 				logLevel: parentLogLevel,
-				timestampInSeconds: timestampInSeconds - SAFE_WINDOW_OF_MONOTONICITY,
+				timestampInSeconds:
+					timestampInSeconds - getSafeWindowOfMonotonicity(fps),
 			});
 		}
 
@@ -163,7 +194,8 @@ export const makeKeyframeBank = async ({
 
 	const getFrameFromTimestamp = async (
 		timestampInSeconds: number,
-	): Promise<VideoSample | null> => {
+		fps: number,
+	): Promise<VideoSampleWithoutDuration | null> => {
 		lastUsed = Date.now();
 
 		// If the requested timestamp is before the start of this bank, clamp it to the start.
@@ -183,7 +215,11 @@ export const makeKeyframeBank = async ({
 			adjustedTimestamp = frameTimestamps[frameTimestamps.length - 1];
 		}
 
-		await ensureEnoughFramesForTimestamp(adjustedTimestamp, parentLogLevel);
+		await ensureEnoughFramesForTimestamp(
+			adjustedTimestamp,
+			parentLogLevel,
+			fps,
+		);
 
 		for (let i = frameTimestamps.length - 1; i >= 0; i--) {
 			const sample = frames[frameTimestamps[i]];
@@ -205,8 +241,8 @@ export const makeKeyframeBank = async ({
 		return frames[frameTimestamps[0]] ?? null;
 	};
 
-	const hasTimestampInSecond = async (timestamp: number) => {
-		return (await getFrameFromTimestamp(timestamp)) !== null;
+	const hasTimestampInSecond = async (timestamp: number, fps: number) => {
+		return (await getFrameFromTimestamp(timestamp, fps)) !== null;
 	};
 
 	const getOpenFrameCount = () => {
@@ -240,9 +276,20 @@ export const makeKeyframeBank = async ({
 			return null;
 		}
 
+		const firstTimestamp = frameTimestamps[0];
+		const lastTimestamp = frameTimestamps[frameTimestamps.length - 1]!;
+		const lastFrame = frames[lastTimestamp];
+
+		// If we have measured it by already having the next frame, use that. Otherwise,
+		// resort to what Mediabunny gave us.
+		const lastFrameDuration =
+			getDurationOfFrame(lastTimestamp) ??
+			(lastFrame as VideoSample).duration ??
+			0;
+
 		return {
-			firstTimestamp: frameTimestamps[0],
-			lastTimestamp: frameTimestamps[frameTimestamps.length - 1],
+			firstTimestamp,
+			lastTimestamp: lastTimestamp + lastFrameDuration,
 		};
 	};
 
@@ -310,13 +357,13 @@ export const makeKeyframeBank = async ({
 	};
 
 	const keyframeBank: KeyframeBank = {
-		getFrameFromTimestamp: (timestamp: number) => {
-			queue = queue.then(() => getFrameFromTimestamp(timestamp));
+		getFrameFromTimestamp: (timestamp: number, fps: number) => {
+			queue = queue.then(() => getFrameFromTimestamp(timestamp, fps));
 			return queue as Promise<VideoSample | null>;
 		},
 		prepareForDeletion,
-		hasTimestampInSecond: (timestamp: number) => {
-			queue = queue.then(() => hasTimestampInSecond(timestamp));
+		hasTimestampInSecond: (timestamp: number, fps: number) => {
+			queue = queue.then(() => hasTimestampInSecond(timestamp, fps));
 			return queue as Promise<boolean>;
 		},
 		addFrame,

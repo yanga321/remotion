@@ -16,9 +16,11 @@ export {
 } from './get-encodable-codecs';
 export {
 	getDefaultAudioCodecForContainer,
+	getDefaultContainerForCodec,
 	getDefaultVideoCodecForContainer,
 	getSupportedAudioCodecsForContainer,
 	getSupportedVideoCodecsForContainer,
+	isAudioOnlyContainer,
 } from './mediabunny-mappings';
 export type {
 	WebRendererAudioCodec,
@@ -33,6 +35,7 @@ export type {
 	RenderMediaOnWebProgress,
 	RenderMediaOnWebProgressCallback,
 	RenderMediaOnWebResult,
+	WebRendererHardwareAcceleration,
 } from './render-media-on-web';
 export {renderStillOnWeb} from './render-still-on-web';
 export type {

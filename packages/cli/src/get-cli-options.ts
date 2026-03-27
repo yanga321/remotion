@@ -1,14 +1,17 @@
-import type {LogLevel} from '@remotion/renderer';
-import {RenderInternals} from '@remotion/renderer';
 import fs from 'node:fs';
 import path from 'node:path';
+import type {LogLevel} from '@remotion/renderer';
+import {BrowserSafeApis} from '@remotion/renderer/client';
 import {ConfigInternals} from './config';
 import {getEnvironmentVariables} from './get-env';
 import {getInputProps} from './get-input-props';
 import {Log} from './log';
+import {parsedCli} from './parsed-cli';
 
 const getAndValidateFrameRange = (logLevel: LogLevel, indent: boolean) => {
-	const frameRange = ConfigInternals.getRange();
+	const frameRange = BrowserSafeApis.options.framesOption.getValue({
+		commandLine: parsedCli,
+	}).value;
 	if (typeof frameRange === 'number') {
 		Log.warn(
 			{logLevel, indent},
@@ -47,12 +50,6 @@ export const getAndValidateAbsoluteOutputFile = (
 	return absoluteOutputFile;
 };
 
-const getProResProfile = () => {
-	const proResProfile = ConfigInternals.getProResProfile();
-
-	return proResProfile;
-};
-
 export const getCliOptions = (options: {
 	isStill: boolean;
 	logLevel: LogLevel;
@@ -60,33 +57,14 @@ export const getCliOptions = (options: {
 }) => {
 	const frameRange = getAndValidateFrameRange(options.logLevel, false);
 
+	const imageSequence = BrowserSafeApis.options.imageSequenceOption.getValue({
+		commandLine: parsedCli,
+	}).value;
 	const shouldOutputImageSequence = options.isStill
 		? true
-		: ConfigInternals.getShouldOutputImageSequence(frameRange);
-
-	const pixelFormat = ConfigInternals.getPixelFormat();
-	const proResProfile = getProResProfile();
-	const browserExecutable = ConfigInternals.getBrowserExecutable();
-
-	const disableWebSecurity = ConfigInternals.getChromiumDisableWebSecurity();
-	const ignoreCertificateErrors = ConfigInternals.getIgnoreCertificateErrors();
-	const userAgent = ConfigInternals.getChromiumUserAgent();
-
-	const everyNthFrame = ConfigInternals.getEveryNthFrame();
-
-	const concurrency = ConfigInternals.getConcurrency();
-
-	const height = ConfigInternals.getHeight();
-	const width = ConfigInternals.getWidth();
-
-	RenderInternals.validateConcurrency({
-		value: concurrency,
-		setting: 'concurrency',
-		checkIfValidForCurrentMachine: false,
-	});
+		: imageSequence || typeof frameRange === 'number';
 
 	return {
-		concurrency,
 		frameRange,
 		shouldOutputImageSequence,
 		inputProps: getInputProps(null, options.logLevel),
@@ -95,17 +73,10 @@ export const getCliOptions = (options: {
 			options.logLevel,
 			options.indent,
 		),
-		pixelFormat,
-		proResProfile,
-		everyNthFrame,
-		stillFrame: ConfigInternals.getStillFrame(),
-		browserExecutable,
-		userAgent,
-		disableWebSecurity,
-		ignoreCertificateErrors,
+		stillFrame:
+			BrowserSafeApis.options.stillFrameOption.getValue({
+				commandLine: parsedCli,
+			}).value ?? 0,
 		ffmpegOverride: ConfigInternals.getFfmpegOverrideFunction(),
-		height,
-		width,
-		configFileImageFormat: ConfigInternals.getUserPreferredVideoImageFormat(),
 	};
 };

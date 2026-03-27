@@ -3,13 +3,14 @@
 		"url": "https://github.com/remotion-dev/remotion/tree/main/packages/babel-loader"
 	},
 	"name": "@remotion/babel-loader",
-	"version": "4.0.410",
+	"version": "4.0.441",
 	"description": "Babel loader for Remotion",
 	"main": "dist/index.js",
 	"scripts": {
-		"formatting": "prettier --experimental-cli src --check",
+		"formatting": "oxfmt src --check",
+		"format": "oxfmt src",
 		"lint": "eslint src",
-		"make": "tsc -d"
+		"make": "tsgo -d"
 	},
 	"files": [
 		"dist"
@@ -26,14 +27,15 @@
 		"@babel/preset-react": "7.14.5",
 		"@babel/preset-typescript": "7.23.2",
 		"babel-loader": "8.2.2",
-		"react-refresh": "0.9.0",
-		"webpack": "5.96.1"
+		"react-refresh": "0.18.0",
+		"webpack": "5.105.0"
 	},
 	"devDependencies": {
 		"@remotion/bundler": "workspace:*",
 		"remotion": "workspace:*",
 		"@remotion/eslint-config-internal": "workspace:*",
-		"eslint": "catalog:"
+		"eslint": "catalog:",
+		"@typescript/native-preview": "catalog:"
 	},
 	"peerDependencies": {
 		"@remotion/bundler": "workspace:*"

@@ -8,7 +8,6 @@ import React, {
 	useState,
 	type CSSProperties,
 } from 'react';
-
 import {PALETTE} from '../layout/colors';
 import {useColorMode} from '../layout/use-color-mode';
 import {SectionTitle} from '../VideoAppsTitle';
@@ -150,6 +149,7 @@ export const Demo: React.FC = () => {
 									}
 								: null
 						}
+						playerRef={ref}
 					/>
 				</PlayerControls>
 			</div>

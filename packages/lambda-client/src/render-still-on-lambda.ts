@@ -1,3 +1,4 @@
+import type {StorageClass} from '@aws-sdk/client-s3';
 import type {
 	BrowserSafeApis,
 	ChromiumOptions,
@@ -6,8 +7,6 @@ import type {
 	ToOptions,
 } from '@remotion/serverless-client';
 import {ServerlessRoutines} from '@remotion/serverless-client';
-
-import type {StorageClass} from '@aws-sdk/client-s3';
 import type {
 	CostsInfo,
 	OutNameInput,
@@ -42,6 +41,8 @@ type OptionalParameters = {
 	downloadBehavior: DownloadBehavior;
 	forceWidth: number | null;
 	forceHeight: number | null;
+	forceFps: number | null;
+	forceDurationInFrames: number | null;
 	forceBucketName: string | null;
 	onInit: (data: {
 		renderId: string;
@@ -162,7 +163,7 @@ export const internalRenderStillOnLambda = wrapWithErrorHandling(
  * @description Renders a still image inside a lambda function and writes it to the specified output location.
  * @see [Documentation](https://remotion.dev/docs/lambda/renderstillonlambda)
  */
-export const renderStillOnLambda = (
+export function renderStillOnLambda(
 	input: RenderStillOnLambdaInput & {
 		/**
 		 * @deprecated Renamed to `jpegQuality`
@@ -177,7 +178,7 @@ export const renderStillOnLambda = (
 		 */
 		apiKey?: string | null;
 	},
-) => {
+): Promise<RenderStillOnLambdaOutput> {
 	return internalRenderStillOnLambda({
 		chromiumOptions: input.chromiumOptions ?? {},
 		composition: input.composition,
@@ -187,6 +188,8 @@ export const renderStillOnLambda = (
 		forceBucketName: input.forceBucketName ?? null,
 		forceHeight: input.forceHeight ?? null,
 		forceWidth: input.forceWidth ?? null,
+		forceFps: input.forceFps ?? null,
+		forceDurationInFrames: input.forceDurationInFrames ?? null,
 		frame: input.frame ?? 0,
 		functionName: input.functionName,
 		imageFormat: input.imageFormat,
@@ -212,4 +215,4 @@ export const renderStillOnLambda = (
 		mediaCacheSizeInBytes: input.mediaCacheSizeInBytes ?? null,
 		isProduction: input.isProduction ?? null,
 	});
-};
+}

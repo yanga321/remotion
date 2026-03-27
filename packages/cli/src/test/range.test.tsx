@@ -1,10 +1,9 @@
 import {describe, expect, test} from 'bun:test';
-import {
-	getRange,
-	setFrameRange,
-	setFrameRangeFromCli,
-} from '../config/frame-range';
+import {RenderInternals} from '@remotion/renderer';
+import {BrowserSafeApis} from '@remotion/renderer/client';
 import {expectToThrow} from './expect-to-throw';
+
+const {framesOption} = BrowserSafeApis.options;
 
 describe('Frame range should throw exception with invalid inputs', () => {
 	const testValues: [number | [number, number] | null, RegExp][] = [
@@ -18,17 +17,20 @@ describe('Frame range should throw exception with invalid inputs', () => {
 		[
 			// @ts-expect-error
 			['0', 2],
-			/Each value of frame range must be a number, but got string \("0"\)/,
+			/The first value of frame range must be a number, but got string \("0"\)/,
 		],
 		[
 			[0.111, 2],
-			/Each value of frame range must be an integer, but got a float \(0.111\)/,
+			/The first value of frame range must be an integer, but got a float \(0.111\)/,
 		],
 		[
 			[0, Infinity],
-			/Each value of frame range must be finite, but got Infinity/,
+			/The second value of frame range must be finite, but got Infinity/,
 		],
-		[[-1, 0], /Each value of frame range must be non-negative, but got -1/],
+		[
+			[-1, 0],
+			/The first value of frame range must be non-negative, but got -1/,
+		],
 		[
 			[10, 0],
 			/The second value of frame range must be not smaller than the first one, but got 10-0/,
@@ -42,21 +44,23 @@ describe('Frame range should throw exception with invalid inputs', () => {
 
 	testValues.forEach((entry) =>
 		test(`test with input ${JSON.stringify(entry[0])}`, () =>
-			expectToThrow(() => setFrameRange(entry[0]), entry[1])),
+			expectToThrow(() => framesOption.setConfig(entry[0]), entry[1])),
 	);
 });
 describe('Frame range tests with valid inputs', () => {
-	const testValues: (number | [number, number] | null)[] = [
+	const testValues: (number | [number, number] | [number, null] | null)[] = [
 		null,
 		[10, 20],
 		[10, 10],
+		[10, null],
+		[0, null],
 		10,
 		0,
 	];
 	testValues.forEach((entry) =>
-		test(`test with input ${entry}`, () => {
-			setFrameRange(entry);
-			expect(getRange()).toEqual(entry);
+		test(`test with input ${JSON.stringify(entry)}`, () => {
+			framesOption.setConfig(entry);
+			expect(framesOption.getValue({commandLine: {}}).value).toEqual(entry);
 		}),
 	);
 });
@@ -75,28 +79,73 @@ describe('Frame range CLI should throw exception with invalid inputs', () => {
 			'one-two',
 			/--frames flag must be a single number, or 2 numbers separated by `-`/,
 		],
-		[' ', /Frame range must be a tuple, got an array with length 1/],
-		['', /Frame range must be a tuple, got an array with length 1/],
+		[
+			' ',
+			/--frames flag must be a single number, or 2 numbers separated by `-`/,
+		],
+		[
+			'',
+			/--frames flag must be a single number, or 2 numbers separated by `-`/,
+		],
 	];
 	testValues.forEach((entry) =>
 		test(`test with input ${entry[0]}`, () =>
-			expectToThrow(() => setFrameRangeFromCli(entry[0]), entry[1])),
+			expectToThrow(
+				() => framesOption.getValue({commandLine: {frames: entry[0]}}),
+				entry[1],
+			)),
 	);
 });
 describe('Frame range CLI tests with valid inputs', () => {
-	setFrameRange(null);
+	framesOption.setConfig(null);
 
-	const testValues: [number | string, number | [number, number]][] = [
+	const testValues: [
+		number | string,
+		number | [number, number] | [number, null],
+	][] = [
 		[0, 0],
 		[10, 10],
 		['1-10', [1, 10]],
 		['10-10', [10, 10]],
 		['-', [0, 0]],
+		// Open-ended ranges
+		['1920-', [1920, null]],
+		['0-', [0, null]],
+		[-1920, [0, 1920]],
 	];
 	testValues.forEach((entry) =>
-		test(`test with input ${entry[0]}`, () => {
-			setFrameRangeFromCli(entry[0]);
-			expect(getRange()).toEqual(entry[1]);
+		test(`test with input ${JSON.stringify(entry[0])}`, () => {
+			expect(
+				framesOption.getValue({commandLine: {frames: entry[0]}}).value,
+			).toEqual(entry[1]);
 		}),
 	);
+});
+
+describe('getRealFrameRange resolves open-ended ranges', () => {
+	test('resolves [number, null] to [number, durationInFrames - 1]', () => {
+		expect(RenderInternals.getRealFrameRange(3600, [1920, null])).toEqual([
+			1920, 3599,
+		]);
+	});
+
+	test('resolves [0, null] to full range', () => {
+		expect(RenderInternals.getRealFrameRange(3600, [0, null])).toEqual([
+			0, 3599,
+		]);
+	});
+
+	test('resolves normal range unchanged', () => {
+		expect(RenderInternals.getRealFrameRange(3600, [10, 20])).toEqual([10, 20]);
+	});
+
+	test('resolves null to full range', () => {
+		expect(RenderInternals.getRealFrameRange(3600, null)).toEqual([0, 3599]);
+	});
+
+	test('throws if open-ended start is beyond composition duration', () => {
+		expect(() => RenderInternals.getRealFrameRange(3600, [5000, null])).toThrow(
+			/not inbetween/,
+		);
+	});
 });

@@ -1,24 +1,32 @@
-import type {RenderStillOnWebImageFormat} from '@remotion/web-renderer';
+import type {CompletedClientRender} from '@remotion/studio-shared';
+import type {
+	RenderStillOnWebImageFormat,
+	WebRendererAudioCodec,
+	WebRendererContainer,
+	WebRendererQuality,
+	WebRendererVideoCodec,
+} from '@remotion/web-renderer';
 import type {LogLevel} from 'remotion';
 
 export type ClientRenderJobProgress = {
-	renderedFrames: number;
 	encodedFrames: number;
 	totalFrames: number;
+	doneIn: number | null;
+	renderEstimatedTime: number;
+	progress: number;
 };
 
 export type GetBlobCallback = () => Promise<Blob>;
 
-export type ClientRenderMetadata = {
-	width: number;
-	height: number;
-	sizeInBytes: number;
-};
-
 type ClientRenderJobDynamicStatus =
 	| {status: 'idle'}
 	| {status: 'running'; progress: ClientRenderJobProgress}
-	| {status: 'done'; getBlob: GetBlobCallback; metadata: ClientRenderMetadata}
+	| {status: 'saving'}
+	| {
+			status: 'done';
+			getBlob?: GetBlobCallback;
+			metadata: CompletedClientRender['metadata'];
+	  }
 	| {status: 'cancelled'}
 	| {
 			status: 'failed';
@@ -46,17 +54,31 @@ export type ClientStillRenderJob = ClientRenderJobBase & {
 
 export type ClientVideoRenderJob = ClientRenderJobBase & {
 	type: 'client-video';
-	container: string;
-	videoCodec: string;
-	audioCodec: string;
+	container: WebRendererContainer;
+	videoCodec: WebRendererVideoCodec | null;
+	audioCodec: WebRendererAudioCodec;
 	startFrame: number;
 	endFrame: number;
-	audioBitrate: string;
-	videoBitrate: string;
+	audioBitrate: WebRendererQuality;
+	videoBitrate: WebRendererQuality;
 	hardwareAcceleration: string;
 	keyframeIntervalInSeconds: number;
 	transparent: boolean;
 	muted: boolean;
 } & ClientRenderJobDynamicStatus;
 
-export type ClientRenderJob = ClientStillRenderJob | ClientVideoRenderJob;
+export type RestoredClientRenderJob = CompletedClientRender & {
+	status: 'done';
+	getBlob?: GetBlobCallback;
+};
+
+export type ClientRenderJob =
+	| ClientStillRenderJob
+	| ClientVideoRenderJob
+	| RestoredClientRenderJob;
+
+export const isRestoredClientJob = (
+	job: ClientRenderJob,
+): job is RestoredClientRenderJob => {
+	return !('inputProps' in job);
+};

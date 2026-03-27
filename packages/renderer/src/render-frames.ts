@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-
 import type {
 	AudioOrVideoAsset,
 	InlineAudioAsset,
@@ -13,11 +12,11 @@ import {DEFAULT_BROWSER} from './browser';
 import type {BrowserExecutable} from './browser-executable';
 import type {BrowserLog} from './browser-log';
 import type {HeadlessBrowser} from './browser/Browser';
-import type {OnLog, Page} from './browser/BrowserPage';
-import {DEFAULT_TIMEOUT} from './browser/TimeoutSettings';
 import {defaultBrowserDownloadProgress} from './browser/browser-download-progress-bar';
+import type {OnLog, Page} from './browser/BrowserPage';
 import {isTargetClosedErr} from './browser/flaky-errors';
 import type {SourceMapGetter} from './browser/source-map-getter';
+import {DEFAULT_TIMEOUT} from './browser/TimeoutSettings';
 import {getShouldUsePartitionedRendering} from './can-use-parallel-encoding';
 import {cycleBrowserTabs} from './cycle-browser-tabs';
 import {defaultOnLog} from './default-on-log';
@@ -157,47 +156,53 @@ export type FrameAndAssets = {
 	inlineAudioAssets: InlineAudioAsset[];
 };
 
-export type RenderFramesOptions = {
-	onStart: (data: OnStartData) => void;
-	onFrameUpdate: (
-		framesRendered: number,
-		frameIndex: number,
-		timeToRenderInMilliseconds: number,
-	) => void;
-	outputDir: string | null;
-	inputProps: Record<string, unknown>;
-	envVariables?: Record<string, string>;
-	imageFormat?: VideoImageFormat;
-	/**
-	 * @deprecated Renamed to "jpegQuality"
-	 */
-	quality?: never;
-	frameRange?: FrameRange | null;
-	everyNthFrame?: number;
-	/**
-	 * @deprecated Use "logLevel": "verbose" instead
-	 */
-	dumpBrowserLogs?: boolean;
-	/**
-	 * @deprecated Use "logLevel" instead
-	 */
-	verbose?: boolean;
-	puppeteerInstance?: HeadlessBrowser;
-	browserExecutable?: BrowserExecutable;
-	onBrowserLog?: (log: BrowserLog) => void;
-	onFrameBuffer?: (buffer: Buffer, frame: number) => void;
-	onDownload?: RenderMediaOnDownload;
-	timeoutInMilliseconds?: number;
-	chromiumOptions?: ChromiumOptions;
-	scale?: number;
-	port?: number | null;
-	cancelSignal?: CancelSignal;
-	composition: VideoConfig;
-	muted?: boolean;
-	concurrency?: number | string | null;
-	onArtifact?: OnArtifact | null;
-	serveUrl: string;
-} & Partial<ToOptions<typeof optionsMap.renderFrames>>;
+type Prettify<T> = {
+	[K in keyof T]: T[K];
+} & {};
+
+export type RenderFramesOptions = Prettify<
+	{
+		onStart: (data: OnStartData) => void;
+		onFrameUpdate: (
+			framesRendered: number,
+			frameIndex: number,
+			timeToRenderInMilliseconds: number,
+		) => void;
+		outputDir: string | null;
+		inputProps: Record<string, unknown>;
+		envVariables?: Record<string, string>;
+		imageFormat?: VideoImageFormat;
+		/**
+		 * @deprecated Renamed to "jpegQuality"
+		 */
+		quality?: never;
+		frameRange?: FrameRange | null;
+		everyNthFrame?: number;
+		/**
+		 * @deprecated Use "logLevel": "verbose" instead
+		 */
+		dumpBrowserLogs?: boolean;
+		/**
+		 * @deprecated Use "logLevel" instead
+		 */
+		verbose?: boolean;
+		puppeteerInstance?: HeadlessBrowser;
+		browserExecutable?: BrowserExecutable;
+		onBrowserLog?: (log: BrowserLog) => void;
+		onFrameBuffer?: (buffer: Buffer, frame: number) => void;
+		onDownload?: RenderMediaOnDownload;
+		timeoutInMilliseconds?: number;
+		chromiumOptions?: ChromiumOptions;
+		scale?: number;
+		port?: number | null;
+		cancelSignal?: CancelSignal;
+		composition: VideoConfig;
+		muted?: boolean;
+		concurrency?: number | string | null;
+		onArtifact?: OnArtifact | null;
+		serveUrl: string;
+	} & Partial<ToOptions<typeof optionsMap.renderFrames>>
+>;
 
 const innerRenderFrames = async ({
 	onFrameUpdate,

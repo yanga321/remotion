@@ -1,12 +1,12 @@
 import {useContext, useEffect, useMemo, useState} from 'react';
-import type {LoopDisplay} from './CompositionManager.js';
-import {SequenceContext} from './SequenceContext.js';
-import {SequenceManager} from './SequenceManager.js';
-import {TimelineContext} from './TimelineContext.js';
 import {useMediaStartsAt} from './audio/use-audio-frame.js';
 import {calculateMediaDuration} from './calculate-media-duration.js';
+import type {LoopDisplay} from './CompositionManager.js';
 import {getAssetDisplayName} from './get-asset-file-name.js';
 import {useNonce} from './nonce.js';
+import {SequenceContext} from './SequenceContext.js';
+import {SequenceManager} from './SequenceManager.js';
+import {useTimelineContext} from './timeline-position-state.js';
 import {useRemotionEnvironment} from './use-remotion-environment.js';
 import {useVideoConfig} from './use-video-config.js';
 import type {VolumeProp} from './volume-prop.js';
@@ -35,7 +35,7 @@ export const useBasicMediaInTimeline = ({
 }: {
 	volume: VolumeProp | undefined;
 	mediaVolume: number;
-	mediaType: 'audio' | 'video';
+	mediaType: 'audio' | 'video' | 'image';
 	src: string | undefined;
 	displayName: string | null;
 	trimBefore: number | undefined;
@@ -53,7 +53,7 @@ export const useBasicMediaInTimeline = ({
 	const [initialVolume] = useState<VolumeProp | undefined>(() => volume);
 
 	const mediaDuration = calculateMediaDuration({
-		mediaDurationInFrames: videoConfig.durationInFrames,
+		mediaDurationInFrames: videoConfig.durationInFrames + (trimBefore ?? 0),
 		playbackRate,
 		trimBefore,
 		trimAfter,
@@ -91,7 +91,7 @@ export const useBasicMediaInTimeline = ({
 	const doesVolumeChange = typeof volume === 'function';
 
 	const nonce = useNonce();
-	const {rootId} = useContext(TimelineContext);
+	const {rootId} = useTimelineContext();
 	const env = useRemotionEnvironment();
 
 	return {
@@ -103,6 +103,93 @@ export const useBasicMediaInTimeline = ({
 		isStudio: env.isStudio,
 		finalDisplayName: displayName ?? getAssetDisplayName(src),
 	};
+};
+
+export const useImageInTimeline = ({
+	src,
+	displayName,
+	id,
+	stack,
+	showInTimeline,
+	premountDisplay,
+	postmountDisplay,
+	loopDisplay,
+}: {
+	src: string | undefined;
+	displayName: string | null;
+	id: string;
+	stack: string | null;
+	showInTimeline: boolean;
+	premountDisplay: number | null;
+	postmountDisplay: number | null;
+	loopDisplay: LoopDisplay | undefined;
+}) => {
+	const parentSequence = useContext(SequenceContext);
+	const {registerSequence, unregisterSequence} = useContext(SequenceManager);
+
+	const {duration, nonce, rootId, isStudio, finalDisplayName} =
+		useBasicMediaInTimeline({
+			volume: undefined,
+			mediaVolume: 0,
+			mediaType: 'image',
+			src,
+			displayName,
+			trimAfter: undefined,
+			trimBefore: undefined,
+			playbackRate: 1,
+		});
+
+	useEffect(() => {
+		if (!src) {
+			throw new Error('No src passed');
+		}
+
+		if (!isStudio && window.process?.env?.NODE_ENV !== 'test') {
+			return;
+		}
+
+		if (!showInTimeline) {
+			return;
+		}
+
+		registerSequence({
+			type: 'image',
+			src,
+			id,
+			duration,
+			from: 0,
+			parent: parentSequence?.id ?? null,
+			displayName: finalDisplayName,
+			rootId,
+			showInTimeline: true,
+			nonce: nonce.get(),
+			loopDisplay,
+			stack,
+			premountDisplay,
+			postmountDisplay,
+			controls: null,
+		});
+
+		return () => {
+			unregisterSequence(id);
+		};
+	}, [
+		duration,
+		id,
+		parentSequence,
+		src,
+		registerSequence,
+		unregisterSequence,
+		nonce,
+		stack,
+		showInTimeline,
+		premountDisplay,
+		postmountDisplay,
+		isStudio,
+		loopDisplay,
+		rootId,
+		finalDisplayName,
+	]);
 };
 
 export const useMediaInTimeline = ({
@@ -179,7 +266,7 @@ export const useMediaInTimeline = ({
 			rootId,
 			volume: volumes,
 			showInTimeline: true,
-			nonce,
+			nonce: nonce.get(),
 			startMediaFrom: 0 - startsAt,
 			doesVolumeChange,
 			loopDisplay,
@@ -187,6 +274,7 @@ export const useMediaInTimeline = ({
 			stack,
 			premountDisplay,
 			postmountDisplay,
+			controls: null,
 		});
 
 		return () => {

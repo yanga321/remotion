@@ -1,3 +1,6 @@
+import fs, {existsSync} from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import type {
 	AudioCodec,
 	Browser,
@@ -35,9 +38,6 @@ import {
 	type ArtifactProgress,
 	type BrowserDownloadState,
 } from '@remotion/studio-shared';
-import fs, {existsSync} from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import type {_InternalTypes} from 'remotion';
 import {NoReactInternals} from 'remotion/no-react';
 import {defaultBrowserDownloadProgress} from '../browser-download-bar';
@@ -80,6 +80,8 @@ export const renderVideoFlow = async ({
 	port,
 	height,
 	width,
+	fps,
+	durationInFrames,
 	remainingArgs,
 	compositionIdFromUi,
 	entryPointReason,
@@ -124,9 +126,12 @@ export const renderVideoFlow = async ({
 	audioLatencyHint,
 	imageSequencePattern,
 	mediaCacheSizeInBytes,
+	rspack,
 	askAIEnabled,
 	experimentalClientSideRenderingEnabled,
+	experimentalVisualModeEnabled,
 	keyboardShortcutsEnabled,
+	shouldCache,
 }: {
 	remotionRoot: string;
 	fullEntryPoint: string;
@@ -145,6 +150,8 @@ export const renderVideoFlow = async ({
 	port: number | null;
 	height: number | null;
 	width: number | null;
+	fps: number | null;
+	durationInFrames: number | null;
 	remainingArgs: (string | number)[];
 	compositionIdFromUi: string | null;
 	outputLocationFromUI: string | null;
@@ -187,10 +194,19 @@ export const renderVideoFlow = async ({
 	audioLatencyHint: AudioContextLatencyCategory | null;
 	imageSequencePattern: string | null;
 	mediaCacheSizeInBytes: number | null;
+	rspack: boolean;
 	askAIEnabled: boolean;
 	experimentalClientSideRenderingEnabled: boolean;
+	experimentalVisualModeEnabled: boolean;
 	keyboardShortcutsEnabled: boolean;
+	shouldCache: boolean;
 }) => {
+	RenderInternals.validateConcurrency({
+		value: concurrency,
+		setting: 'concurrency',
+		checkIfValidForCurrentMachine: true,
+	});
+
 	let bundlingProgress: BundlingState | null = null;
 	let renderingProgress: RenderingProgressInput | null = null;
 	let stitchingProgress: StitchingProgressInput | null = null;
@@ -331,8 +347,11 @@ export const renderVideoFlow = async ({
 			publicPath,
 			audioLatencyHint,
 			experimentalClientSideRenderingEnabled,
+			experimentalVisualModeEnabled,
 			askAIEnabled,
 			keyboardShortcutsEnabled,
+			rspack,
+			shouldCache,
 		},
 	);
 
@@ -373,6 +392,8 @@ export const renderVideoFlow = async ({
 		await getCompositionWithDimensionOverride({
 			height,
 			width,
+			fps,
+			durationInFrames,
 			args: remainingArgs,
 			compositionIdFromUi,
 			browserExecutable,
@@ -640,6 +661,8 @@ export const renderVideoFlow = async ({
 			...config,
 			width: width ?? config.width,
 			height: height ?? config.height,
+			fps: fps ?? config.fps,
+			durationInFrames: durationInFrames ?? config.durationInFrames,
 		},
 		crf: crf ?? null,
 		envVariables,

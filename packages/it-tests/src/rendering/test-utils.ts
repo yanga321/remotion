@@ -1,8 +1,8 @@
-import {RenderInternals} from '@remotion/renderer';
-import execa from 'execa';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import {RenderInternals} from '@remotion/renderer';
+import execa from 'execa';
 import {random} from 'remotion';
 import sharp from 'sharp';
 
@@ -152,6 +152,8 @@ async function saveSequenceInTempDir(id: string) {
 			'--image-format',
 			'png',
 			'--sequence',
+			'--concurrency',
+			'2',
 		],
 		{
 			cwd: path.join(process.cwd(), '..', 'example'),

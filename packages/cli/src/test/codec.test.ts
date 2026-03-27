@@ -1,6 +1,6 @@
+import {describe, expect, test} from 'bun:test';
 import type {CodecOrUndefined} from '@remotion/renderer';
 import {BrowserSafeApis} from '@remotion/renderer/client';
-import {describe, expect, test} from 'bun:test';
 import {expectToThrow} from './expect-to-throw';
 
 // setCodec
@@ -11,6 +11,7 @@ describe('Codec tests setCodec', () => {
 		'h265',
 		'vp8',
 		'vp9',
+		'av1',
 		undefined,
 	];
 	validCodecInputs.forEach((entry) =>

@@ -26,6 +26,7 @@ import {
 } from './options/audio-codec';
 import {tmpDir} from './tmp-dir';
 import {truthy} from './truthy';
+import {validateNumberOfGifLoops} from './validate-number-of-gif-loops';
 
 type MandatoryCombineChunksOptions = {
 	outputLocation: string;
@@ -69,6 +70,7 @@ const codecSupportsFastStart: {[key in Codec]: boolean} = {
 	'h264-ts': false,
 	h264: true,
 	h265: true,
+	av1: true,
 	aac: false,
 	gif: false,
 	mp3: false,
@@ -103,6 +105,8 @@ export const internalCombineChunks = async ({
 }: AllCombineChunksOptions & {
 	indent: boolean;
 }) => {
+	validateNumberOfGifLoops(numberOfGifLoops, codec);
+
 	const filelistDir = tmpDir(REMOTION_FILELIST_TOKEN);
 
 	const shouldCreateVideo = !isAudioCodec(codec);
@@ -246,6 +250,7 @@ export const internalCombineChunks = async ({
 			cancelSignal,
 			addFaststart: codecSupportsFastStart[codec],
 			metadata,
+			numberOfGifLoops,
 		});
 		onProgress({totalProgress: 1, frames: numberOfFrames});
 		rmSync(filelistDir, {recursive: true});

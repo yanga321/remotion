@@ -6,20 +6,20 @@ import type {_InternalTypes, VideoConfig} from 'remotion';
 import {labelProResProfile} from '../../helpers/prores-labels';
 import {useFileExistence} from '../../helpers/use-file-existence';
 import {Checkmark} from '../../icons/Checkmark';
+import {Spacing} from '../layout';
 import type {ComboboxValue} from '../NewComposition/ComboBox';
 import {Combobox} from '../NewComposition/ComboBox';
 import {InputDragger} from '../NewComposition/InputDragger';
 import {RightAlignInput} from '../NewComposition/RemInput';
 import type {SegmentedControlItem} from '../SegmentedControl';
 import {SegmentedControl} from '../SegmentedControl';
-import {Spacing} from '../layout';
 import {FrameRangeSetting} from './FrameRangeSetting';
-import {OptionExplainerBubble} from './OptionExplainerBubble';
-import type {RenderType} from './RenderModalAdvanced';
-import {RenderModalOutputName} from './RenderModalOutputName';
 import {humanReadableCodec} from './human-readable-codec';
 import {humanReadableLogLevel} from './human-readable-loglevel';
 import {input, label, optionRow, rightRow} from './layout';
+import {OptionExplainerBubble} from './OptionExplainerBubble';
+import type {RenderType} from './RenderModalAdvanced';
+import {RenderModalOutputName} from './RenderModalOutputName';
 
 const container: React.CSSProperties = {
 	flex: 1,
@@ -46,6 +46,7 @@ export const RenderModalBasic: React.FC<{
 	readonly validationMessage: string | null;
 	readonly setVerboseLogging: React.Dispatch<React.SetStateAction<LogLevel>>;
 	readonly logLevel: LogLevel;
+	readonly showOutputName: boolean;
 }> = ({
 	renderMode,
 	imageFormatOptions,
@@ -65,6 +66,7 @@ export const RenderModalBasic: React.FC<{
 	validationMessage,
 	setVerboseLogging,
 	logLevel,
+	showOutputName,
 }) => {
 	const existence = useFileExistence(outName);
 	const videoCodecOptions = useMemo((): ComboboxValue[] => {
@@ -220,14 +222,16 @@ export const RenderModalBasic: React.FC<{
 					startFrame={startFrame}
 				/>
 			)}
-			<RenderModalOutputName
-				existence={existence}
-				inputStyle={input}
-				outName={outName}
-				onValueChange={onValueChange}
-				validationMessage={validationMessage}
-				label={renderMode === 'sequence' ? 'Folder name' : 'Output name'}
-			/>
+			{showOutputName ? (
+				<RenderModalOutputName
+					existence={existence}
+					inputStyle={input}
+					outName={outName}
+					onValueChange={onValueChange}
+					validationMessage={validationMessage}
+					label={renderMode === 'sequence' ? 'Folder name' : 'Output name'}
+				/>
+			) : null}
 			<div style={optionRow}>
 				<div style={label}>
 					Log Level <Spacing x={0.5} />

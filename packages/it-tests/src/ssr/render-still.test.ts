@@ -1,13 +1,15 @@
+import {beforeAll, expect, test} from 'bun:test';
+import {existsSync} from 'fs';
+import os from 'os';
+import path from 'path';
 import {
 	ensureBrowser,
 	getCompositions,
 	openBrowser,
 	renderStill,
 } from '@remotion/renderer';
-import {beforeAll, expect, test} from 'bun:test';
-import {existsSync} from 'fs';
-import os from 'os';
-import path from 'path';
+
+const exampleBuild = path.join(__dirname, '..', '..', '..', 'example', 'build');
 
 beforeAll(async () => {
 	await ensureBrowser();
@@ -15,13 +17,10 @@ beforeAll(async () => {
 
 test('Render video with browser instance open', async () => {
 	const puppeteerInstance = await openBrowser('chrome');
-	const compositions = await getCompositions(
-		'https://661808694cad562ef2f35be7--incomparable-dasik-a4482b.netlify.app/',
-		{
-			puppeteerInstance,
-			inputProps: {},
-		},
-	);
+	const compositions = await getCompositions(exampleBuild, {
+		puppeteerInstance,
+		inputProps: {},
+	});
 
 	const reactSvg = compositions.find((c) => c.id === 'react-svg');
 
@@ -35,8 +34,7 @@ test('Render video with browser instance open', async () => {
 
 	const {buffer} = await renderStill({
 		output: outPath,
-		serveUrl:
-			'https://661808694cad562ef2f35be7--incomparable-dasik-a4482b.netlify.app/',
+		serveUrl: exampleBuild,
 		composition: reactSvg,
 		puppeteerInstance,
 	});
@@ -45,9 +43,7 @@ test('Render video with browser instance open', async () => {
 });
 
 test('Render still with browser instance not open and legacy webpack config', async () => {
-	const compositions = await getCompositions(
-		'https://661808694cad562ef2f35be7--incomparable-dasik-a4482b.netlify.app/',
-	);
+	const compositions = await getCompositions(exampleBuild);
 
 	const reactSvg = compositions.find((c) => c.id === 'react-svg');
 
@@ -61,8 +57,7 @@ test('Render still with browser instance not open and legacy webpack config', as
 
 	await renderStill({
 		output: outPath,
-		serveUrl:
-			'https://661808694cad562ef2f35be7--incomparable-dasik-a4482b.netlify.app/',
+		serveUrl: exampleBuild,
 		composition: reactSvg,
 	});
 	expect(existsSync(outPath)).toBe(true);

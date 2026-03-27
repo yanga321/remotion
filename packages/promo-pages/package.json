@@ -1,6 +1,6 @@
 {
 	"name": "@remotion/promo-pages",
-	"version": "4.0.410",
+	"version": "4.0.441",
 	"publishConfig": {
 		"access": "public"
 	},
@@ -13,18 +13,25 @@
 	"dependencies": {
 		"@remotion/animated-emoji": "workspace:*",
 		"@remotion/design": "workspace:*",
-		"@remotion/lambda": "workspace:*",
+		"@remotion/web-renderer": "workspace:*",
 		"@remotion/lottie": "workspace:*",
 		"@remotion/paths": "workspace:*",
 		"@remotion/player": "workspace:*",
 		"@remotion/shapes": "workspace:*",
+		"@remotion/media": "workspace:*",
 		"@remotion/svg-3d-engine": "workspace:*",
 		"create-video": "workspace:*",
 		"hls.js": "1.5.19",
 		"polished": "4.3.1",
 		"remotion": "workspace:*",
 		"zod": "catalog:",
-		"bun-plugin-tailwind": "0.1.2"
+		"@mux/upchunk": "^3.5.0",
+		"@vidstack/react": "1.12.13",
+		"bun-plugin-tailwind": "0.1.2",
+		"@mediabunny/ac3": "catalog:",
+		"@mediabunny/aac-encoder": "catalog:",
+		"@mediabunny/flac-encoder": "catalog:",
+		"@mediabunny/mp3-encoder": "catalog:"
 	},
 	"devDependencies": {
 		"@remotion/eslint-config-internal": "workspace:*",
@@ -35,8 +42,8 @@
 		"eslint-config-next": "15.1.6",
 		"plyr": "3.7.3",
 		"postcss": "8.4.47",
-		"tailwindcss": "4.1.1",
-		"@tailwindcss/cli": "4.1.1",
+		"tailwindcss": "4.2.0",
+		"@tailwindcss/cli": "4.2.0",
 		"react": "catalog:",
 		"react-dom": "catalog:",
 		"tailwind-merge": "2.5.2",

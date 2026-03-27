@@ -21,7 +21,6 @@ import {validateFrameRange} from './frame-range';
 import {internalGetCompositions} from './get-compositions';
 import {resolveConcurrency} from './get-concurrency';
 import {getFramesToRender} from './get-duration-from-frame-range';
-
 import {
 	defaultCodecsForFileExtension,
 	getFileExtensionFromCodec,
@@ -47,7 +46,6 @@ import {
 	validOpenGlRenderers,
 	validateOpenGlRenderer,
 } from './options/gl';
-
 import {parseStack} from './parse-browser-error-stack';
 import * as perf from './perf';
 import {DEFAULT_PIXEL_FORMAT, validPixelFormats} from './pixel-format';
@@ -103,6 +101,7 @@ export {openBrowser} from './open-browser';
 export type {ChromiumOptions} from './open-browser';
 export {ChromeMode} from './options/chrome-mode';
 export {ColorSpace} from './options/color-space';
+export type {Concurrency} from './options/concurrency';
 export type {DeleteAfter} from './options/delete-after';
 export {OpenGlRenderer} from './options/gl';
 export {NumberOfGifLoops} from './options/number-of-gif-loops';
@@ -119,6 +118,7 @@ export {
 	InternalRenderMediaOptions,
 	RenderMediaOnProgress,
 	RenderMediaOptions,
+	RenderMediaProgress,
 	SlowFrame,
 	StitchingState,
 	renderMedia,

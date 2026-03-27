@@ -1,28 +1,28 @@
-import { useState, useEffect, useMemo, useRef } from "react";
 import * as Babel from "@babel/standalone";
-import React from "react";
-import {
-  AbsoluteFill,
-  interpolate,
-  useCurrentFrame,
-  useVideoConfig,
-  spring,
-  Sequence,
-} from "remotion";
-import * as RemotionShapes from "@remotion/shapes";
 import { Lottie } from "@remotion/lottie";
+import * as RemotionShapes from "@remotion/shapes";
 import { ThreeCanvas } from "@remotion/three";
-import * as THREE from "three";
 import {
   TransitionSeries,
   linearTiming,
   springTiming,
 } from "@remotion/transitions";
+import { clockWipe } from "@remotion/transitions/clock-wipe";
 import { fade } from "@remotion/transitions/fade";
+import { flip } from "@remotion/transitions/flip";
 import { slide } from "@remotion/transitions/slide";
 import { wipe } from "@remotion/transitions/wipe";
-import { flip } from "@remotion/transitions/flip";
-import { clockWipe } from "@remotion/transitions/clock-wipe";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  AbsoluteFill,
+  Img,
+  Sequence,
+  interpolate,
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+import * as THREE from "three";
 
 export interface CompilationResult {
   Component: React.ComponentType | null;
@@ -32,8 +32,35 @@ export interface CompilationResult {
 // Strip imports and extract component body from LLM-generated code
 // Safety layer in case LLM includes full ES6 syntax despite instructions
 function extractComponentBody(code: string): string {
-  // Strip import statements
-  const cleaned = code.replace(/^import\s+.*$/gm, "").trim();
+  // Strip all import statements (handles multi-line imports with newlines in braces)
+  let cleaned = code;
+
+  // Remove type imports: import type { ... } from "...";
+  cleaned = cleaned.replace(
+    /import\s+type\s*\{[\s\S]*?\}\s*from\s*["'][^"']+["'];?/g,
+    "",
+  );
+  // Remove combined default + named imports: import X, { ... } from "...";
+  cleaned = cleaned.replace(
+    /import\s+\w+\s*,\s*\{[\s\S]*?\}\s*from\s*["'][^"']+["'];?/g,
+    "",
+  );
+  // Remove multi-line named imports: import { ... } from "...";
+  cleaned = cleaned.replace(
+    /import\s*\{[\s\S]*?\}\s*from\s*["'][^"']+["'];?/g,
+    "",
+  );
+  // Remove namespace imports: import * as X from "...";
+  cleaned = cleaned.replace(
+    /import\s+\*\s+as\s+\w+\s+from\s*["'][^"']+["'];?/g,
+    "",
+  );
+  // Remove default imports: import X from "...";
+  cleaned = cleaned.replace(/import\s+\w+\s+from\s*["'][^"']+["'];?/g, "");
+  // Remove side-effect imports: import "...";
+  cleaned = cleaned.replace(/import\s*["'][^"']+["'];?/g, "");
+
+  cleaned = cleaned.trim();
 
   // Extract body from "export const MyAnimation = () => { ... };"
   const match = cleaned.match(
@@ -75,6 +102,7 @@ export function compileCode(code: string): CompilationResult {
       useVideoConfig,
       spring,
       Sequence,
+      Img,
     };
 
     const wrappedCode = `${transpiled.code}\nreturn DynamicAnimation;`;
@@ -92,6 +120,7 @@ export function compileCode(code: string): CompilationResult {
       "useVideoConfig",
       "spring",
       "Sequence",
+      "Img",
       "useState",
       "useEffect",
       "useMemo",
@@ -137,6 +166,7 @@ export function compileCode(code: string): CompilationResult {
       useVideoConfig,
       spring,
       Sequence,
+      Img,
       useState,
       useEffect,
       useMemo,

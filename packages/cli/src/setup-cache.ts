@@ -1,11 +1,11 @@
+import {existsSync} from 'fs';
+import path from 'path';
 import type {MandatoryLegacyBundleOptions} from '@remotion/bundler';
 import {BundlerInternals} from '@remotion/bundler';
 import type {LogLevel} from '@remotion/renderer';
 import {RenderInternals} from '@remotion/renderer';
 import type {BundlingState, CopyingState} from '@remotion/studio-server';
 import type {GitSource} from '@remotion/studio-shared';
-import {existsSync} from 'fs';
-import path from 'path';
 import {ConfigInternals} from './config';
 import {getRenderDefaults} from './get-render-defaults';
 import {Log} from './log';
@@ -33,8 +33,11 @@ export const bundleOnCliOrTakeServeUrl = async ({
 	publicPath,
 	audioLatencyHint,
 	experimentalClientSideRenderingEnabled,
+	experimentalVisualModeEnabled,
 	askAIEnabled,
 	keyboardShortcutsEnabled,
+	rspack,
+	shouldCache,
 }: {
 	fullPath: string;
 	remotionRoot: string;
@@ -55,8 +58,11 @@ export const bundleOnCliOrTakeServeUrl = async ({
 	publicPath: string | null;
 	audioLatencyHint: AudioContextLatencyCategory | null;
 	experimentalClientSideRenderingEnabled: boolean;
+	experimentalVisualModeEnabled: boolean;
 	askAIEnabled: boolean;
 	keyboardShortcutsEnabled: boolean;
+	rspack: boolean;
+	shouldCache: boolean;
 }): Promise<{
 	urlOrBundle: string;
 	cleanup: () => void;
@@ -98,8 +104,11 @@ export const bundleOnCliOrTakeServeUrl = async ({
 		publicPath,
 		audioLatencyHint,
 		experimentalClientSideRenderingEnabled,
+		experimentalVisualModeEnabled,
 		askAIEnabled,
 		keyboardShortcutsEnabled,
+		rspack,
+		shouldCache,
 	});
 
 	return {
@@ -125,8 +134,11 @@ export const bundleOnCli = async ({
 	publicPath,
 	audioLatencyHint,
 	experimentalClientSideRenderingEnabled,
+	experimentalVisualModeEnabled,
 	askAIEnabled,
 	keyboardShortcutsEnabled,
+	rspack,
+	shouldCache,
 }: {
 	fullPath: string;
 	remotionRoot: string;
@@ -147,11 +159,12 @@ export const bundleOnCli = async ({
 	publicPath: string | null;
 	audioLatencyHint: AudioContextLatencyCategory | null;
 	experimentalClientSideRenderingEnabled: boolean;
+	experimentalVisualModeEnabled: boolean;
 	keyboardShortcutsEnabled: boolean;
 	askAIEnabled: boolean;
+	rspack: boolean;
+	shouldCache: boolean;
 }) => {
-	const shouldCache = ConfigInternals.getWebpackCaching();
-
 	const symlinkState: SymbolicLinksState = {
 		symlinks: [],
 	};
@@ -214,6 +227,7 @@ export const bundleOnCli = async ({
 		publicPath,
 		askAIEnabled,
 		keyboardShortcutsEnabled,
+		rspack,
 	};
 
 	const [hash] = await BundlerInternals.getConfig({
@@ -225,6 +239,7 @@ export const bundleOnCli = async ({
 		bufferStateDelayInMilliseconds,
 		maxTimelineTracks,
 		experimentalClientSideRenderingEnabled,
+		experimentalVisualModeEnabled,
 	});
 	const cacheExistedBefore = BundlerInternals.cacheExists(
 		remotionRoot,
@@ -274,6 +289,7 @@ export const bundleOnCli = async ({
 		bufferStateDelayInMilliseconds,
 		audioLatencyHint,
 		experimentalClientSideRenderingEnabled,
+		experimentalVisualModeEnabled,
 		renderDefaults: getRenderDefaults(),
 	});
 

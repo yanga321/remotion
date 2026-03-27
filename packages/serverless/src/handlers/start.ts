@@ -51,6 +51,7 @@ export const startHandler = async <Provider extends CloudProvider>({
 				forcePathStyle: params.forcePathStyle,
 				skipPutAcl: false,
 				requestHandler: null,
+				logLevel: params.logLevel,
 			})
 		).bucketName;
 	const realServeUrl = providerSpecifics.convertToServeUrl({
@@ -117,6 +118,8 @@ export const startHandler = async <Provider extends CloudProvider>({
 		encodingMaxRate: params.encodingMaxRate,
 		forceHeight: params.forceHeight,
 		forceWidth: params.forceWidth,
+		forceFps: params.forceFps ?? null,
+		forceDurationInFrames: params.forceDurationInFrames ?? null,
 		rendererFunctionName: params.rendererFunctionName,
 		audioCodec: params.audioCodec,
 		offthreadVideoCacheSizeInBytes: params.offthreadVideoCacheSizeInBytes,

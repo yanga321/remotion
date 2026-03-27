@@ -1,5 +1,5 @@
+import {useMemo} from 'react';
 import {useCallback} from 'react';
-import type {z} from 'zod';
 import {LIGHT_TEXT} from '../../../helpers/colors';
 import {Checkbox} from '../../Checkbox';
 import {
@@ -7,13 +7,13 @@ import {
 	useZodTypesIfPossible,
 } from '../../get-zod-if-possible';
 import {Spacing} from '../../layout';
+import {createZodValues} from './create-zod-values';
 import {Fieldset} from './Fieldset';
 import {SchemaLabel} from './SchemaLabel';
+import {zodSafeParse, type AnyZodSchema} from './zod-schema-type';
+import type {JSONPath} from './zod-types';
 import type {UpdaterFunction} from './ZodSwitch';
 import {ZodSwitch} from './ZodSwitch';
-import {createZodValues} from './create-zod-values';
-import {useLocalState} from './local-state';
-import type {JSONPath} from './zod-types';
 
 const labelStyle: React.CSSProperties = {
 	fontFamily: 'sans-serif',
@@ -29,31 +29,21 @@ const checkBoxWrapper: React.CSSProperties = {
 };
 
 export const ZodOrNullishEditor: React.FC<{
-	showSaveButton: boolean;
 	jsonPath: JSONPath;
 	value: unknown;
-	defaultValue: unknown;
-	schema: z.ZodTypeAny;
-	innerSchema: z.ZodTypeAny;
+	schema: AnyZodSchema;
+	innerSchema: AnyZodSchema;
 	setValue: UpdaterFunction<unknown>;
-	onSave: UpdaterFunction<unknown>;
 	onRemove: null | (() => void);
 	nullishValue: null | undefined;
-	saving: boolean;
-	saveDisabledByParent: boolean;
 	mayPad: boolean;
 }> = ({
 	jsonPath,
 	schema,
 	setValue,
-	onSave,
-	defaultValue,
 	value,
-	showSaveButton,
 	onRemove,
 	nullishValue,
-	saving,
-	saveDisabledByParent,
 	mayPad,
 	innerSchema,
 }) => {
@@ -66,16 +56,10 @@ export const ZodOrNullishEditor: React.FC<{
 
 	const isChecked = value === nullishValue;
 
-	const {
-		localValue,
-		onChange: setLocalValue,
-		reset,
-	} = useLocalState({
-		schema,
-		setValue,
-		unsavedValue: value,
-		savedValue: defaultValue,
-	});
+	const zodValidation = useMemo(
+		() => zodSafeParse(schema, value),
+		[schema, value],
+	);
 
 	const onCheckBoxChange: React.ChangeEventHandler<HTMLInputElement> =
 		useCallback(
@@ -83,43 +67,28 @@ export const ZodOrNullishEditor: React.FC<{
 				const val = e.target.checked
 					? nullishValue
 					: createZodValues(innerSchema, z, zodTypes);
-				setLocalValue(() => val, false, false);
+				setValue(() => val, {shouldSave: true});
 			},
-			[innerSchema, nullishValue, setLocalValue, z, zodTypes],
+			[innerSchema, nullishValue, setValue, z, zodTypes],
 		);
 
-	const save = useCallback(() => {
-		onSave(() => value, false, false);
-	}, [onSave, value]);
-
 	return (
-		<Fieldset shouldPad={mayPad} success={localValue.zodValidation.success}>
-			{localValue.value === nullishValue ? (
+		<Fieldset shouldPad={mayPad}>
+			{value === nullishValue ? (
 				<SchemaLabel
 					handleClick={null}
-					isDefaultValue={localValue.value === defaultValue}
 					jsonPath={jsonPath}
-					onReset={reset}
-					onSave={save}
-					showSaveButton={showSaveButton}
 					onRemove={onRemove}
-					saving={saving}
-					valid={localValue.zodValidation.success}
-					saveDisabledByParent={saveDisabledByParent}
+					valid={zodValidation.success}
 					suffix={null}
 				/>
 			) : (
 				<ZodSwitch
-					value={localValue.value}
-					setValue={setLocalValue}
+					value={value}
+					setValue={setValue}
 					jsonPath={jsonPath}
 					schema={innerSchema}
-					defaultValue={defaultValue}
-					onSave={onSave}
-					showSaveButton={showSaveButton}
 					onRemove={onRemove}
-					saving={saving}
-					saveDisabledByParent={saveDisabledByParent}
 					mayPad={false}
 				/>
 			)}

@@ -1,18 +1,16 @@
 import type {ComponentType} from 'react';
 import React, {Suspense, useContext, useEffect} from 'react';
 import {createPortal} from 'react-dom';
-import type {AnyZodObject, z} from 'zod';
+import type {z} from 'zod';
+import type {AnyZodObject} from './any-zod-type.js';
 import {
 	CanUseRemotionHooks,
 	CanUseRemotionHooksProvider,
 } from './CanUseRemotionHooks.js';
+import type {Codec} from './codec.js';
+import type {TComposition} from './CompositionManager.js';
 import {CompositionSetters} from './CompositionManagerContext.js';
 import {FolderContext} from './Folder.js';
-import {
-	PROPS_UPDATED_EXTERNALLY,
-	useResolvedVideoConfig,
-} from './ResolveCompositionConfig.js';
-import type {Codec} from './codec.js';
 import {serializeThenDeserializeInStudio} from './input-props-serialization.js';
 import {useIsPlayer} from './is-player.js';
 import {Loading} from './loading-indicator.js';
@@ -21,6 +19,7 @@ import {portalNode} from './portal-node.js';
 import type {InferProps, PropsIfHasProps} from './props-if-has-props.js';
 import type {ProResProfile} from './prores-profile.js';
 import type {PixelFormat, VideoImageFormat} from './render-types.js';
+import {useResolvedVideoConfig} from './ResolveCompositionConfig.js';
 import {useDelayRender} from './use-delay-render.js';
 import {useLazyComponent} from './use-lazy-component.js';
 import {useRemotionEnvironment} from './use-remotion-environment.js';
@@ -196,12 +195,12 @@ const InnerComposition = <
 			component: lazy,
 			defaultProps: serializeThenDeserializeInStudio(
 				(defaultProps ?? {}) as z.output<Schema> & Props,
-			) as z.output<Schema> & Props,
-			nonce,
+			) as InferProps<Schema, Props>,
+			nonce: nonce.get(),
 			parentFolderName: parentName,
 			schema: schema ?? null,
 			calculateMetadata: compProps.calculateMetadata ?? null,
-		});
+		} as TComposition<Schema, Props>);
 
 		return () => {
 			unregisterComposition(id);
@@ -222,16 +221,6 @@ const InnerComposition = <
 		registerComposition,
 		unregisterComposition,
 	]);
-
-	useEffect(() => {
-		window.dispatchEvent(
-			new CustomEvent<{resetUnsaved: string | null}>(PROPS_UPDATED_EXTERNALLY, {
-				detail: {
-					resetUnsaved: id,
-				},
-			}),
-		);
-	}, [defaultProps, id]);
 
 	const resolved = useResolvedVideoConfig(id);
 

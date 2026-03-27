@@ -1,3 +1,6 @@
+import crypto from 'node:crypto';
+import {existsSync} from 'node:fs';
+import path from 'node:path';
 import type {WebpackOverrideFn} from '@remotion/bundler';
 import type {LogLevel} from '@remotion/renderer';
 import {RenderInternals} from '@remotion/renderer';
@@ -6,11 +9,9 @@ import type {
 	RenderDefaults,
 	RenderJob,
 } from '@remotion/studio-shared';
-import crypto from 'node:crypto';
-import {existsSync} from 'node:fs';
-import path from 'node:path';
-import {openBrowser} from './better-opn';
+import {getFileWatcherRegistry} from './file-watcher';
 import {getNetworkAddress} from './get-network-address';
+import {maybeOpenBrowser} from './maybe-open-browser';
 import type {QueueMethods} from './preview-server/api-types';
 import {noOpUntilRestart} from './preview-server/close-and-restart';
 import {getAbsolutePublicDir} from './preview-server/get-absolute-public-dir';
@@ -23,41 +24,12 @@ import {startServer} from './preview-server/start-server';
 import {printServerReadyComment, setServerReadyComment} from './server-ready';
 import {watchRootFile} from './watch-root-file';
 
-const getShouldOpenBrowser = ({
-	configValueShouldOpenBrowser,
-	parsedCliOpen,
-}: {
-	configValueShouldOpenBrowser: boolean;
-	parsedCliOpen: boolean;
-}): {
-	shouldOpenBrowser: boolean;
-	reasonForBrowserDecision: string;
-} => {
-	if (parsedCliOpen === false) {
-		return {
-			shouldOpenBrowser: false,
-			reasonForBrowserDecision: '--no-open specified',
-		};
-	}
-
-	if ((process.env.BROWSER ?? '').toLowerCase() === 'none') {
-		return {
-			shouldOpenBrowser: false,
-			reasonForBrowserDecision: 'env BROWSER=none was set',
-		};
-	}
-
-	if (configValueShouldOpenBrowser === false) {
-		return {shouldOpenBrowser: false, reasonForBrowserDecision: 'Config file'};
-	}
-
-	return {shouldOpenBrowser: true, reasonForBrowserDecision: 'default'};
-};
+export type StartStudioResult = {type: 'restarted'} | {type: 'already-running'};
 
 export const startStudio = async ({
 	browserArgs,
 	browserFlag,
-	configValueShouldOpenBrowser,
+	shouldOpenBrowser,
 	fullEntryPath,
 	logLevel,
 	getCurrentInputProps,
@@ -67,6 +39,7 @@ export const startStudio = async ({
 	remotionRoot,
 	keyboardShortcutsEnabled,
 	experimentalClientSideRenderingEnabled,
+	experimentalVisualModeEnabled,
 	relativePublicDir,
 	webpackOverride,
 	poll,
@@ -74,7 +47,6 @@ export const startStudio = async ({
 	getRenderQueue,
 	numberOfAudioTags,
 	queueMethods,
-	parsedCliOpen,
 	previewEntry,
 	gitSource,
 	bufferStateDelayInMilliseconds,
@@ -83,11 +55,13 @@ export const startStudio = async ({
 	audioLatencyHint,
 	enableCrossSiteIsolation,
 	askAIEnabled,
+	forceNew,
+	rspack,
 }: {
 	browserArgs: string;
 	browserFlag: string;
 	logLevel: LogLevel;
-	configValueShouldOpenBrowser: boolean;
+	shouldOpenBrowser: boolean;
 	fullEntryPath: string;
 	getCurrentInputProps: () => object;
 	getEnvVariables: () => Record<string, string>;
@@ -97,6 +71,7 @@ export const startStudio = async ({
 	remotionRoot: string;
 	keyboardShortcutsEnabled: boolean;
 	experimentalClientSideRenderingEnabled: boolean;
+	experimentalVisualModeEnabled: boolean;
 	relativePublicDir: string | null;
 	webpackOverride: WebpackOverrideFn;
 	poll: number | null;
@@ -106,13 +81,14 @@ export const startStudio = async ({
 	audioLatencyHint: AudioContextLatencyCategory | null;
 	enableCrossSiteIsolation: boolean;
 	queueMethods: QueueMethods;
-	parsedCliOpen: boolean;
 	previewEntry: string;
 	gitSource: GitSource | null;
 	binariesDirectory: string | null;
 	forceIPv4: boolean;
 	askAIEnabled: boolean;
-}) => {
+	forceNew: boolean;
+	rspack: boolean;
+}): Promise<StartStudioResult> => {
 	try {
 		if (typeof Bun === 'undefined') {
 			process.title = 'node (npx remotion studio)';
@@ -122,6 +98,9 @@ export const startStudio = async ({
 			process.title = `bun (bunx remotionb studio)`;
 		}
 	} catch {}
+
+	// Validate that the file watcher registry has been initialized
+	getFileWatcherRegistry();
 
 	watchRootFile(remotionRoot, previewEntry);
 	const publicDir = getAbsolutePublicDir({
@@ -157,7 +136,7 @@ export const startStudio = async ({
 		staticHash,
 	});
 
-	const {port, liveEventsServer, close} = await startServer({
+	const result = await startServer({
 		entry: path.resolve(previewEntry),
 		userDefinedComponent: fullEntryPath,
 		getCurrentInputProps,
@@ -167,6 +146,7 @@ export const startStudio = async ({
 		remotionRoot,
 		keyboardShortcutsEnabled,
 		experimentalClientSideRenderingEnabled,
+		experimentalVisualModeEnabled,
 		publicDir,
 		webpackOverride,
 		poll,
@@ -186,7 +166,33 @@ export const startStudio = async ({
 		audioLatencyHint,
 		enableCrossSiteIsolation,
 		askAIEnabled,
+		forceNew,
+		rspack,
 	});
+
+	if (result.type === 'already-running') {
+		RenderInternals.Log.info(
+			{indent: false, logLevel},
+			`Already running on port ${result.port}.`,
+		);
+		const res = await maybeOpenBrowser({
+			browserArgs,
+			browserFlag,
+			shouldOpenBrowser,
+			url: `http://localhost:${result.port}`,
+			logLevel,
+		});
+		if (res.didOpenBrowser) {
+			RenderInternals.Log.info(
+				{indent: false, logLevel},
+				'Opened browser. Pass --force-new to force a new instance.',
+			);
+		}
+
+		return {type: 'already-running'};
+	}
+
+	const {port, liveEventsServer, close} = result;
 
 	const cleanupLiveEventsListener = setLiveEventsListener(liveEventsServer);
 	const networkAddress = getNetworkAddress();
@@ -203,24 +209,15 @@ export const startStudio = async ({
 	}
 
 	printServerReadyComment('Server ready', logLevel);
+	RenderInternals.Log.info({indent: false, logLevel}, 'Building...');
 
-	const {reasonForBrowserDecision, shouldOpenBrowser} = getShouldOpenBrowser({
-		configValueShouldOpenBrowser,
-		parsedCliOpen,
+	await maybeOpenBrowser({
+		browserArgs,
+		browserFlag,
+		shouldOpenBrowser,
+		url: `http://localhost:${port}`,
+		logLevel,
 	});
-
-	if (shouldOpenBrowser) {
-		await openBrowser({
-			url: `http://localhost:${port}`,
-			browserArgs,
-			browserFlag,
-		});
-	} else {
-		RenderInternals.Log.verbose(
-			{indent: false, logLevel},
-			`Not opening browser, reason: ${reasonForBrowserDecision}`,
-		);
-	}
 
 	await noOpUntilRestart();
 	RenderInternals.Log.info(
@@ -235,4 +232,6 @@ export const startStudio = async ({
 		{indent: false, logLevel},
 		RenderInternals.chalk.blue('Restarting server...'),
 	);
+
+	return {type: 'restarted'};
 };

@@ -1,9 +1,11 @@
 import React from 'react';
-import type {z} from 'zod';
+import {useZodTypesIfPossible} from '../../get-zod-if-possible';
+import type {AnyZodSchema} from './zod-schema-type';
 import {
-	useZodIfPossible,
-	useZodTypesIfPossible,
-} from '../../get-zod-if-possible';
+	getEffectsInner,
+	getZodSchemaDescription,
+	getZodSchemaType,
+} from './zod-schema-type';
 import type {JSONPath} from './zod-types';
 import {ZodArrayEditor} from './ZodArrayEditor';
 import {ZodBooleanEditor} from './ZodBooleanEditor';
@@ -27,66 +29,53 @@ import {ZodUnionEditor} from './ZodUnionEditor';
 
 export type UpdaterFunction<T> = (
 	updater: (oldValue: T) => T,
-	forceApply: boolean,
-	increment: boolean,
+	{shouldSave}: {shouldSave: boolean},
 ) => void;
 
 export const ZodSwitch: React.FC<{
-	readonly schema: z.ZodTypeAny;
+	readonly schema: AnyZodSchema;
 	readonly jsonPath: JSONPath;
 	readonly value: unknown;
-	readonly defaultValue: unknown;
 	readonly setValue: UpdaterFunction<unknown>;
-	readonly onSave: UpdaterFunction<unknown>;
-	readonly showSaveButton: boolean;
 	readonly onRemove: null | (() => void);
-	readonly saving: boolean;
-	readonly saveDisabledByParent: boolean;
 	readonly mayPad: boolean;
-}> = ({
-	schema,
-	jsonPath,
-	value,
-	setValue,
-	defaultValue,
-	onSave,
-	showSaveButton,
-	onRemove,
-	saving,
-	saveDisabledByParent,
-	mayPad,
-}) => {
-	const def: z.ZodTypeDef = schema._def;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const typeName = (def as any).typeName as z.ZodFirstPartyTypeKind;
-
-	const z = useZodIfPossible();
-	if (!z) {
-		throw new Error('expected zod');
-	}
-
+}> = ({schema, jsonPath, value, setValue, onRemove, mayPad}) => {
+	const typeName = getZodSchemaType(schema);
+	const description = getZodSchemaDescription(schema);
 	const zodTypes = useZodTypesIfPossible();
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodObject) {
+	if (typeName === 'object') {
 		return (
 			<ZodObjectEditor
 				setValue={setValue as UpdaterFunction<Record<string, unknown>>}
-				unsavedValue={value as Record<string, unknown>}
-				savedValue={defaultValue as Record<string, unknown>}
+				value={value as Record<string, unknown>}
 				jsonPath={jsonPath}
 				schema={schema}
-				onSave={onSave as UpdaterFunction<Record<string, unknown>>}
-				showSaveButton={showSaveButton}
 				onRemove={onRemove}
-				saving={saving}
-				saveDisabledByParent={saveDisabledByParent}
 				mayPad={mayPad}
 				discriminatedUnionReplacement={null}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodString) {
+	if (typeName === 'string') {
+		// In v4, .refine() doesn't wrap in ZodEffects, so check brand here too
+		if (
+			zodTypes &&
+			description === zodTypes.ZodZypesInternals.REMOTION_COLOR_BRAND
+		) {
+			return (
+				<ZodColorEditor
+					value={value as string}
+					setValue={setValue as UpdaterFunction<string>}
+					jsonPath={jsonPath}
+					schema={schema}
+					onRemove={onRemove}
+					mayPad={mayPad}
+				/>
+			);
+		}
+
 		if ((value as string).startsWith(window.remotion_staticBase)) {
 			return (
 				<ZodStaticFileEditor
@@ -94,12 +83,7 @@ export const ZodSwitch: React.FC<{
 					value={value as string}
 					jsonPath={jsonPath}
 					schema={schema}
-					defaultValue={defaultValue as string}
-					onSave={onSave as (newValue: (oldVal: string) => string) => void}
-					showSaveButton={showSaveButton}
 					onRemove={onRemove}
-					saving={saving}
-					saveDisabledByParent={saveDisabledByParent}
 					mayPad={mayPad}
 				/>
 			);
@@ -107,8 +91,7 @@ export const ZodSwitch: React.FC<{
 
 		if (
 			zodTypes &&
-			schema._def.description ===
-				zodTypes.ZodZypesInternals.REMOTION_TEXTAREA_BRAND
+			description === zodTypes.ZodZypesInternals.REMOTION_TEXTAREA_BRAND
 		) {
 			return (
 				<ZodTextareaEditor
@@ -116,12 +99,7 @@ export const ZodSwitch: React.FC<{
 					setValue={setValue as UpdaterFunction<string>}
 					jsonPath={jsonPath}
 					schema={schema}
-					onSave={onSave as UpdaterFunction<string>}
-					defaultValue={defaultValue as string}
-					showSaveButton={showSaveButton}
 					onRemove={onRemove}
-					saving={saving}
-					saveDisabledByParent={saveDisabledByParent}
 					mayPad={mayPad}
 				/>
 			);
@@ -133,170 +111,144 @@ export const ZodSwitch: React.FC<{
 				setValue={setValue as UpdaterFunction<string>}
 				jsonPath={jsonPath}
 				schema={schema}
-				onSave={onSave as UpdaterFunction<string>}
-				defaultValue={defaultValue as string}
-				showSaveButton={showSaveButton}
 				onRemove={onRemove}
-				saving={saving}
-				saveDisabledByParent={saveDisabledByParent}
 				mayPad={mayPad}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodDate) {
+	if (typeName === 'date') {
 		return (
 			<ZodDateEditor
 				value={value as Date}
 				setValue={setValue as UpdaterFunction<Date>}
 				jsonPath={jsonPath}
 				schema={schema}
-				onSave={onSave as UpdaterFunction<Date>}
-				defaultValue={defaultValue as Date}
-				showSaveButton={showSaveButton}
 				onRemove={onRemove}
-				saving={saving}
-				saveDisabledByParent={saveDisabledByParent}
 				mayPad={mayPad}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodNumber) {
+	if (typeName === 'number') {
 		return (
 			<ZodNumberEditor
 				value={value as number}
 				setValue={setValue as UpdaterFunction<number>}
 				jsonPath={jsonPath}
 				schema={schema}
-				defaultValue={defaultValue as number}
-				onSave={onSave as UpdaterFunction<number>}
-				showSaveButton={showSaveButton}
 				onRemove={onRemove}
-				saving={saving}
-				saveDisabledByParent={saveDisabledByParent}
 				mayPad={mayPad}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodBoolean) {
+	if (typeName === 'boolean') {
 		return (
 			<ZodBooleanEditor
 				value={value as boolean}
 				setValue={setValue as UpdaterFunction<boolean>}
 				jsonPath={jsonPath}
-				defaultValue={defaultValue as boolean}
-				onSave={onSave as UpdaterFunction<boolean>}
-				showSaveButton={showSaveButton}
 				onRemove={onRemove}
-				saving={saving}
-				saveDisabledByParent={saveDisabledByParent}
 				mayPad={mayPad}
-				schema={schema}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodUndefined) {
+	if (typeName === 'undefined') {
 		return (
 			<ZonNonEditableValue
 				jsonPath={jsonPath}
-				showSaveButton={showSaveButton}
 				label={'undefined'}
-				saving={saving}
 				mayPad={mayPad}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodNull) {
+	if (typeName === 'null') {
 		return (
-			<ZonNonEditableValue
-				jsonPath={jsonPath}
-				showSaveButton={showSaveButton}
-				label={'null'}
-				saving={saving}
-				mayPad={mayPad}
-			/>
+			<ZonNonEditableValue jsonPath={jsonPath} label={'null'} mayPad={mayPad} />
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodAny) {
+	if (typeName === 'any') {
 		return (
 			<ZonNonEditableValue
 				jsonPath={jsonPath}
-				showSaveButton={showSaveButton}
 				label={'any (not editable)'}
-				saving={saving}
 				mayPad={mayPad}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodBigInt) {
+	if (typeName === 'bigint') {
 		return (
 			<ZonNonEditableValue
 				jsonPath={jsonPath}
-				showSaveButton={showSaveButton}
 				label={'BigInt (not editable)'}
-				saving={saving}
 				mayPad={mayPad}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodUnknown) {
+	if (typeName === 'unknown') {
 		return (
 			<ZonNonEditableValue
 				jsonPath={jsonPath}
-				showSaveButton={showSaveButton}
 				label={'unknown (not editable)'}
-				saving={saving}
 				mayPad={mayPad}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodArray) {
+	if (typeName === 'array') {
+		// In v4, .refine() doesn't wrap in ZodEffects, so check brand here too
+		if (
+			zodTypes &&
+			description === zodTypes.ZodZypesInternals.REMOTION_MATRIX_BRAND
+		) {
+			return (
+				<ZodMatrixEditor
+					setValue={setValue as UpdaterFunction<unknown[]>}
+					value={value as unknown[]}
+					jsonPath={jsonPath}
+					schema={schema}
+					onRemove={onRemove}
+					mayPad={mayPad}
+				/>
+			);
+		}
+
 		return (
 			<ZodArrayEditor
 				setValue={setValue as UpdaterFunction<unknown[]>}
 				value={value as unknown[]}
 				jsonPath={jsonPath}
 				schema={schema}
-				defaultValue={defaultValue as unknown[]}
-				onSave={onSave as UpdaterFunction<unknown[]>}
-				showSaveButton={showSaveButton}
 				onRemove={onRemove}
-				saving={saving}
-				saveDisabledByParent={saveDisabledByParent}
 				mayPad={mayPad}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodEnum) {
+	if (typeName === 'enum') {
 		return (
 			<ZodEnumEditor
 				setValue={setValue as UpdaterFunction<string>}
 				value={value as string}
 				jsonPath={jsonPath}
 				schema={schema}
-				defaultValue={defaultValue as string}
-				onSave={onSave as UpdaterFunction<string>}
-				showSaveButton={showSaveButton}
 				onRemove={onRemove}
-				saving={saving}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodEffects) {
+	// In v3, effects wrap schemas (e.g. .refine(), .transform()).
+	// In v4, refine/transform are embedded as checks, so this only applies to v3.
+	if (typeName === 'effects') {
 		if (
 			zodTypes &&
-			schema._def.description ===
-				zodTypes.ZodZypesInternals.REMOTION_COLOR_BRAND
+			description === zodTypes.ZodZypesInternals.REMOTION_COLOR_BRAND
 		) {
 			return (
 				<ZodColorEditor
@@ -304,12 +256,7 @@ export const ZodSwitch: React.FC<{
 					setValue={setValue as UpdaterFunction<string>}
 					jsonPath={jsonPath}
 					schema={schema}
-					onSave={onSave as UpdaterFunction<string>}
-					defaultValue={defaultValue as string}
-					showSaveButton={showSaveButton}
 					onRemove={onRemove}
-					saving={saving}
-					saveDisabledByParent={saveDisabledByParent}
 					mayPad={mayPad}
 				/>
 			);
@@ -317,21 +264,15 @@ export const ZodSwitch: React.FC<{
 
 		if (
 			zodTypes &&
-			schema._def.description ===
-				zodTypes.ZodZypesInternals.REMOTION_MATRIX_BRAND
+			description === zodTypes.ZodZypesInternals.REMOTION_MATRIX_BRAND
 		) {
 			return (
 				<ZodMatrixEditor
 					setValue={setValue as UpdaterFunction<unknown[]>}
 					value={value as unknown[]}
 					jsonPath={jsonPath}
-					schema={schema._def.schema}
-					defaultValue={defaultValue as unknown[]}
-					onSave={onSave as UpdaterFunction<unknown[]>}
-					showSaveButton={showSaveButton}
+					schema={getEffectsInner(schema)}
 					onRemove={onRemove}
-					saving={saving}
-					saveDisabledByParent={saveDisabledByParent}
 					mayPad={mayPad}
 				/>
 			);
@@ -343,119 +284,85 @@ export const ZodSwitch: React.FC<{
 				setValue={setValue}
 				jsonPath={jsonPath}
 				schema={schema}
-				defaultValue={defaultValue}
-				onSave={onSave}
-				showSaveButton={showSaveButton}
 				onRemove={onRemove}
-				saving={saving}
 				mayPad={mayPad}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodUnion) {
+	if (typeName === 'union') {
 		return (
 			<ZodUnionEditor
 				schema={schema}
-				showSaveButton={showSaveButton}
 				jsonPath={jsonPath}
 				value={value}
-				defaultValue={defaultValue}
 				setValue={setValue}
-				onSave={onSave}
 				onRemove={onRemove}
-				saving={saving}
-				saveDisabledByParent={saveDisabledByParent}
 				mayPad={mayPad}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodOptional) {
+	if (typeName === 'optional') {
 		return (
 			<ZodOptionalEditor
 				jsonPath={jsonPath}
-				showSaveButton={showSaveButton}
-				defaultValue={defaultValue}
 				value={value}
 				setValue={setValue}
-				onSave={onSave}
 				onRemove={onRemove}
 				schema={schema}
-				saving={saving}
-				saveDisabledByParent={saveDisabledByParent}
 				mayPad={mayPad}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodNullable) {
+	if (typeName === 'nullable') {
 		return (
 			<ZodNullableEditor
 				jsonPath={jsonPath}
-				showSaveButton={showSaveButton}
-				defaultValue={defaultValue}
 				value={value}
 				setValue={setValue}
-				onSave={onSave}
 				onRemove={onRemove}
 				schema={schema}
-				saving={saving}
-				saveDisabledByParent={saveDisabledByParent}
 				mayPad={mayPad}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodDefault) {
+	if (typeName === 'default') {
 		return (
 			<ZodDefaultEditor
 				jsonPath={jsonPath}
-				showSaveButton={showSaveButton}
-				defaultValue={defaultValue}
 				value={value}
 				setValue={setValue}
-				onSave={onSave}
 				onRemove={onRemove}
 				schema={schema}
-				saving={saving}
-				saveDisabledByParent={saveDisabledByParent}
 				mayPad={mayPad}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodDiscriminatedUnion) {
+	if (typeName === 'discriminatedUnion') {
 		return (
 			<ZodDiscriminatedUnionEditor
-				defaultValue={defaultValue as Record<string, unknown>}
 				mayPad={mayPad}
 				schema={schema}
 				setValue={setValue as UpdaterFunction<Record<string, unknown>>}
 				value={value as Record<string, unknown>}
 				jsonPath={jsonPath}
 				onRemove={onRemove}
-				onSave={onSave as UpdaterFunction<unknown>}
-				saving={saving}
-				saveDisabledByParent={saveDisabledByParent}
-				showSaveButton={showSaveButton}
 			/>
 		);
 	}
 
-	if (typeName === z.ZodFirstPartyTypeKind.ZodTuple) {
+	if (typeName === 'tuple') {
 		return (
 			<ZodTupleEditor
 				setValue={setValue as UpdaterFunction<unknown[]>}
 				value={value as unknown[]}
 				jsonPath={jsonPath}
 				schema={schema}
-				defaultValue={defaultValue as unknown[]}
-				onSave={onSave as UpdaterFunction<unknown[]>}
-				showSaveButton={showSaveButton}
 				onRemove={onRemove}
-				saving={saving}
-				saveDisabledByParent={saveDisabledByParent}
 				mayPad={mayPad}
 			/>
 		);
@@ -464,9 +371,7 @@ export const ZodSwitch: React.FC<{
 	return (
 		<ZonNonEditableValue
 			jsonPath={jsonPath}
-			showSaveButton={showSaveButton}
 			label={`${typeName} (not editable)`}
-			saving={saving}
 			mayPad={mayPad}
 		/>
 	);

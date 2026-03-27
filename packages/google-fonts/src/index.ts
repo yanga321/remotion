@@ -29,6 +29,7 @@ export type GoogleFont = {
 					weights?: Variants[T]['weights'][] | undefined;
 					subsets?: Variants[T]['subsets'][] | undefined;
 					document?: Document | undefined;
+					ignoreTooManyRequestsWarning?: boolean;
 			  }
 			| undefined,
 	) => {
@@ -329,6 +330,11 @@ export const getAvailableFonts = () => [
 		fontFamily: 'Alumni Sans SC',
 		importName: 'AlumniSansSC',
 		load: () => import('./AlumniSansSC') as Promise<GoogleFont>,
+	},
+	{
+		fontFamily: 'Alyamama',
+		importName: 'Alyamama',
+		load: () => import('./Alyamama') as Promise<GoogleFont>,
 	},
 	{
 		fontFamily: 'Amarante',
@@ -1031,6 +1037,26 @@ export const getAvailableFonts = () => [
 		load: () => import('./Besley') as Promise<GoogleFont>,
 	},
 	{
+		fontFamily: 'Betania Patmos',
+		importName: 'BetaniaPatmos',
+		load: () => import('./BetaniaPatmos') as Promise<GoogleFont>,
+	},
+	{
+		fontFamily: 'Betania Patmos GDL',
+		importName: 'BetaniaPatmosGDL',
+		load: () => import('./BetaniaPatmosGDL') as Promise<GoogleFont>,
+	},
+	{
+		fontFamily: 'Betania Patmos In',
+		importName: 'BetaniaPatmosIn',
+		load: () => import('./BetaniaPatmosIn') as Promise<GoogleFont>,
+	},
+	{
+		fontFamily: 'Betania Patmos In GDL',
+		importName: 'BetaniaPatmosInGDL',
+		load: () => import('./BetaniaPatmosInGDL') as Promise<GoogleFont>,
+	},
+	{
 		fontFamily: 'Beth Ellen',
 		importName: 'BethEllen',
 		load: () => import('./BethEllen') as Promise<GoogleFont>,
@@ -1264,6 +1290,21 @@ export const getAvailableFonts = () => [
 		fontFamily: 'Bowlby One SC',
 		importName: 'BowlbyOneSC',
 		load: () => import('./BowlbyOneSC') as Promise<GoogleFont>,
+	},
+	{
+		fontFamily: 'Bpmf Huninn',
+		importName: 'BpmfHuninn',
+		load: () => import('./BpmfHuninn') as Promise<GoogleFont>,
+	},
+	{
+		fontFamily: 'Bpmf Iansui',
+		importName: 'BpmfIansui',
+		load: () => import('./BpmfIansui') as Promise<GoogleFont>,
+	},
+	{
+		fontFamily: 'Bpmf Zihi Kai Std',
+		importName: 'BpmfZihiKaiStd',
+		load: () => import('./BpmfZihiKaiStd') as Promise<GoogleFont>,
 	},
 	{
 		fontFamily: 'Braah One',
@@ -1989,6 +2030,11 @@ export const getAvailableFonts = () => [
 		fontFamily: 'Darumadrop One',
 		importName: 'DarumadropOne',
 		load: () => import('./DarumadropOne') as Promise<GoogleFont>,
+	},
+	{
+		fontFamily: 'Datatype',
+		importName: 'Datatype',
+		load: () => import('./Datatype') as Promise<GoogleFont>,
 	},
 	{
 		fontFamily: 'David Libre',
@@ -3041,6 +3087,11 @@ export const getAvailableFonts = () => [
 		load: () => import('./Gurajada') as Promise<GoogleFont>,
 	},
 	{
+		fontFamily: 'Gveret Levin',
+		importName: 'GveretLevin',
+		load: () => import('./GveretLevin') as Promise<GoogleFont>,
+	},
+	{
 		fontFamily: 'Gwendolyn',
 		importName: 'Gwendolyn',
 		load: () => import('./Gwendolyn') as Promise<GoogleFont>,
@@ -3356,6 +3407,11 @@ export const getAvailableFonts = () => [
 		load: () => import('./Iceland') as Promise<GoogleFont>,
 	},
 	{
+		fontFamily: 'Idiqlat',
+		importName: 'Idiqlat',
+		load: () => import('./Idiqlat') as Promise<GoogleFont>,
+	},
+	{
 		fontFamily: 'Imbue',
 		importName: 'Imbue',
 		load: () => import('./Imbue') as Promise<GoogleFont>,
@@ -3444,6 +3500,16 @@ export const getAvailableFonts = () => [
 		fontFamily: 'Inter Tight',
 		importName: 'InterTight',
 		load: () => import('./InterTight') as Promise<GoogleFont>,
+	},
+	{
+		fontFamily: 'Iosevka Charon',
+		importName: 'IosevkaCharon',
+		load: () => import('./IosevkaCharon') as Promise<GoogleFont>,
+	},
+	{
+		fontFamily: 'Iosevka Charon Mono',
+		importName: 'IosevkaCharonMono',
+		load: () => import('./IosevkaCharonMono') as Promise<GoogleFont>,
 	},
 	{
 		fontFamily: 'Irish Grover',
@@ -6997,6 +7063,11 @@ export const getAvailableFonts = () => [
 		load: () => import('./RampartOne') as Promise<GoogleFont>,
 	},
 	{
+		fontFamily: 'Ramsina',
+		importName: 'Ramsina',
+		load: () => import('./Ramsina') as Promise<GoogleFont>,
+	},
+	{
 		fontFamily: 'Ranchers',
 		importName: 'Ranchers',
 		load: () => import('./Ranchers') as Promise<GoogleFont>,
@@ -7430,6 +7501,11 @@ export const getAvailableFonts = () => [
 		fontFamily: 'Rye',
 		importName: 'Rye',
 		load: () => import('./Rye') as Promise<GoogleFont>,
+	},
+	{
+		fontFamily: 'SN Pro',
+		importName: 'SNPro',
+		load: () => import('./SNPro') as Promise<GoogleFont>,
 	},
 	{
 		fontFamily: 'STIX Two Text',

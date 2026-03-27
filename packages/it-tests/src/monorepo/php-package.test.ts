@@ -1,9 +1,9 @@
-import {LambdaClientInternals} from '@remotion/lambda-client';
-import {$} from 'bun';
 import {beforeAll, describe, expect, test} from 'bun:test';
 import {execSync} from 'child_process';
 import {readFileSync, writeFileSync} from 'fs';
 import path from 'path';
+import {LambdaClientInternals} from '@remotion/lambda-client';
+import {$} from 'bun';
 
 const referenceVersion = readFileSync(
 	path.join(process.cwd(), '..', 'core', 'package.json'),
@@ -16,7 +16,7 @@ beforeAll(async () => {
 	await $`php composer.phar update --quiet --lock`.cwd(
 		path.join(process.cwd(), '..', 'lambda-php'),
 	);
-});
+}, 120_000);
 
 describe('These should run serially', () => {
 	test('Set the right version for phpunit', () => {
@@ -97,6 +97,8 @@ class Semantic
 				forceBucketName: null,
 				forceHeight: null,
 				forceWidth: null,
+				forceDurationInFrames: null,
+				forceFps: null,
 				frameRange: null,
 				framesPerLambda: null,
 				imageFormat: 'jpeg',

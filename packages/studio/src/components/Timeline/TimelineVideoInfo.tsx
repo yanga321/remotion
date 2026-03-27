@@ -87,13 +87,13 @@ const calculateTimestampSlots = ({
 
 const ensureSlots = ({
 	filledSlots,
-	visualizationWidth,
+	naturalWidth,
 	fromSeconds,
 	toSeconds,
 	aspectRatio,
 }: {
 	filledSlots: Map<number, number | undefined>;
-	visualizationWidth: number;
+	naturalWidth: number;
 	fromSeconds: number;
 	toSeconds: number;
 	aspectRatio: number;
@@ -101,7 +101,7 @@ const ensureSlots = ({
 	const segmentDuration = toSeconds - fromSeconds;
 
 	const timestampTargets = calculateTimestampSlots({
-		visualizationWidth,
+		visualizationWidth: naturalWidth,
 		fromSeconds,
 		segmentDuration,
 		aspectRatio,
@@ -155,14 +155,14 @@ const drawSlot = ({
 
 const fillWithCachedFrames = ({
 	ctx,
-	visualizationWidth,
+	naturalWidth,
 	filledSlots,
 	src,
 	segmentDuration,
 	fromSeconds,
 }: {
 	ctx: CanvasRenderingContext2D;
-	visualizationWidth: number;
+	naturalWidth: number;
 	filledSlots: Map<number, number | undefined>;
 	src: string;
 	segmentDuration: number;
@@ -213,7 +213,7 @@ const fillWithCachedFrames = ({
 			ctx,
 			frame: frame.frame,
 			filledSlots,
-			visualizationWidth,
+			visualizationWidth: naturalWidth,
 			timestamp,
 			segmentDuration,
 			fromSeconds,
@@ -268,9 +268,18 @@ const fillFrameWhereItFits = ({
 export const TimelineVideoInfo: React.FC<{
 	readonly src: string;
 	readonly visualizationWidth: number;
-	readonly startFrom: number;
+	readonly naturalWidth: number;
+	readonly trimBefore: number;
 	readonly durationInFrames: number;
-}> = ({src, visualizationWidth, startFrom, durationInFrames}) => {
+	readonly playbackRate: number;
+}> = ({
+	src,
+	visualizationWidth,
+	naturalWidth,
+	trimBefore,
+	durationInFrames,
+	playbackRate,
+}) => {
 	const {fps} = useVideoConfig();
 	const ref = useRef<HTMLDivElement>(null);
 	const [error, setError] = useState<Error | null>(null);
@@ -308,13 +317,15 @@ export const TimelineVideoInfo: React.FC<{
 		// desired-timestamp -> filled-timestamp
 		const filledSlots = new Map<number, number | undefined>();
 
-		const fromSeconds = startFrom / fps;
-		const toSeconds = (startFrom + durationInFrames) / fps;
+		const fromSeconds = trimBefore / fps;
+		// Trim is applied first, then playbackRate. Each composition frame
+		// advances the source video by `playbackRate` source frames.
+		const toSeconds = fromSeconds + (durationInFrames * playbackRate) / fps;
 
 		if (aspectRatio.current !== null) {
 			ensureSlots({
 				filledSlots,
-				visualizationWidth,
+				naturalWidth,
 				fromSeconds,
 				toSeconds,
 				aspectRatio: aspectRatio.current,
@@ -322,7 +333,7 @@ export const TimelineVideoInfo: React.FC<{
 
 			fillWithCachedFrames({
 				ctx,
-				visualizationWidth,
+				naturalWidth,
 				filledSlots,
 				src,
 				segmentDuration: toSeconds - fromSeconds,
@@ -357,7 +368,7 @@ export const TimelineVideoInfo: React.FC<{
 					filledSlots,
 					fromSeconds,
 					toSeconds,
-					visualizationWidth,
+					naturalWidth,
 					aspectRatio: aspectRatio.current,
 				});
 
@@ -367,57 +378,73 @@ export const TimelineVideoInfo: React.FC<{
 			},
 			src,
 			onVideoSample: (sample) => {
-				const frame = sample.toVideoFrame();
-				const scale = (HEIGHT / frame.displayHeight) * window.devicePixelRatio;
+				let frame: VideoFrame | undefined;
+				try {
+					frame = sample.toVideoFrame();
+					const scale =
+						(HEIGHT / frame.displayHeight) * window.devicePixelRatio;
 
-				const transformed = resizeVideoFrame({
-					frame,
-					scale,
-				});
+					const transformed = resizeVideoFrame({
+						frame,
+						scale,
+					});
 
-				if (transformed !== frame) {
-					frame.close();
+					if (transformed !== frame) {
+						frame.close();
+					}
+
+					frame = undefined;
+
+					const databaseKey = makeFrameDatabaseKey(src, transformed.timestamp);
+
+					const existingFrame = frameDatabase.get(databaseKey);
+					if (existingFrame) {
+						existingFrame.frame.close();
+					}
+
+					frameDatabase.set(databaseKey, {
+						frame: transformed,
+						lastUsed: Date.now(),
+					});
+					if (aspectRatio.current === null) {
+						throw new Error('Aspect ratio is not set');
+					}
+
+					ensureSlots({
+						filledSlots,
+						fromSeconds,
+						toSeconds,
+						naturalWidth,
+						aspectRatio: aspectRatio.current,
+					});
+					fillFrameWhereItFits({
+						ctx,
+						filledSlots,
+						visualizationWidth: naturalWidth,
+						frame: transformed,
+						segmentDuration: toSeconds - fromSeconds,
+						fromSeconds,
+					});
+				} catch (e) {
+					if (frame) {
+						frame.close();
+					}
+
+					throw e;
+				} finally {
+					sample.close();
 				}
-
-				const databaseKey = makeFrameDatabaseKey(src, transformed.timestamp);
-
-				const existingFrame = frameDatabase.get(databaseKey);
-				if (existingFrame) {
-					existingFrame.frame.close();
-				}
-
-				frameDatabase.set(databaseKey, {
-					frame: transformed,
-					lastUsed: Date.now(),
-				});
-				if (aspectRatio.current === null) {
-					throw new Error('Aspect ratio is not set');
-				}
-
-				ensureSlots({
-					filledSlots,
-					fromSeconds,
-					toSeconds,
-					visualizationWidth,
-					aspectRatio: aspectRatio.current,
-				});
-				fillFrameWhereItFits({
-					ctx,
-					filledSlots,
-					visualizationWidth,
-					frame: transformed,
-					segmentDuration: toSeconds - fromSeconds,
-					fromSeconds,
-				});
-
-				sample.close();
 			},
 			signal: controller.signal,
 		})
 			.then(() => {
+				if (controller.signal.aborted) {
+					return;
+				}
+
 				fillWithCachedFrames({
 					ctx,
-					visualizationWidth,
+					naturalWidth,
 					filledSlots,
 					src,
 					segmentDuration: toSeconds - fromSeconds,
@@ -435,7 +462,16 @@ export const TimelineVideoInfo: React.FC<{
 			controller.abort();
 			current.removeChild(canvas);
 		};
-	}, [durationInFrames, error, fps, src, startFrom, visualizationWidth]);
+	}, [
+		durationInFrames,
+		error,
+		fps,
+		naturalWidth,
+		playbackRate,
+		src,
+		trimBefore,
+		visualizationWidth,
+	]);
 
 	return <div ref={ref} style={containerStyle} />;
 };

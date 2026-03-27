@@ -1,3 +1,4 @@
+import {exit} from 'node:process';
 import {
 	GetAWSDefaultServiceQuotaCommand,
 	GetServiceQuotaCommand,
@@ -14,7 +15,6 @@ import {
 	LAMBDA_CONCURRENCY_LIMIT_QUOTA,
 } from '@remotion/lambda-client/constants';
 import type {LogLevel, LogOptions} from '@remotion/renderer';
-import {exit} from 'node:process';
 import {QUOTAS_COMMAND} from '.';
 import {forceFlagProvided} from '../../args';
 import {getAwsRegion} from '../../get-aws-region';
@@ -34,10 +34,10 @@ const makeQuotaUrl = ({
 	return `https://${region}.console.aws.amazon.com/servicequotas/home/services/lambda/quotas/${quotaId}`;
 };
 
-export const quotasIncreaseCommand = async (
+export async function quotasIncreaseCommand(
 	logLevel: LogLevel,
 	requestHandler: RequestHandler | null,
-) => {
+): Promise<void> {
 	const region = getAwsRegion();
 
 	const [concurrencyLimit, defaultConcurrencyLimit, changes] =
@@ -152,4 +152,4 @@ export const quotasIncreaseCommand = async (
 		{indent: false, logLevel},
 		`Requested increase successfully. Run "${BINARY_NAME} ${QUOTAS_COMMAND}" to check whether your request was approved.`,
 	);
-};
+}

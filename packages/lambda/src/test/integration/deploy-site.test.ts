@@ -1,6 +1,6 @@
+import {expect, test} from 'bun:test';
 import {LambdaClientInternals} from '@remotion/lambda-client';
 import {internalGetOrCreateBucket} from '@remotion/serverless';
-import {expect, test} from 'bun:test';
 import {internalDeleteSite} from '../../api/delete-site';
 import {internalDeploySite} from '../../api/deploy-site';
 import {mockFullClientSpecifics} from '../mock-implementation';
@@ -81,6 +81,7 @@ test('Should apply name if given', async () => {
 		forcePathStyle: false,
 		skipPutAcl: false,
 		requestHandler: null,
+		logLevel: 'info',
 	});
 	expect(
 		await internalDeploySite({
@@ -106,7 +107,7 @@ test('Should apply name if given', async () => {
 		stats: {
 			deletedFiles: 0,
 			untouchedFiles: 0,
-			uploadedFiles: 2,
+			uploadedFiles: 3,
 		},
 	});
 });
@@ -120,6 +121,7 @@ test('Should overwrite site if given siteName is already taken', async () => {
 		forcePathStyle: false,
 		skipPutAcl: false,
 		requestHandler: null,
+		logLevel: 'info',
 	});
 
 	expect(
@@ -145,7 +147,7 @@ test('Should overwrite site if given siteName is already taken', async () => {
 			'https://remotionlambda-apnortheast1-abcdef.s3.ap-northeast-1.amazonaws.com/sites/testing/index.html',
 		stats: {
 			deletedFiles: 0,
-			untouchedFiles: 2,
+			untouchedFiles: 3,
 			uploadedFiles: 0,
 		},
 	});
@@ -160,6 +162,7 @@ test('Should delete the previous site if deploying the new one', async () => {
 		forcePathStyle: false,
 		skipPutAcl: false,
 		requestHandler: null,
+		logLevel: 'info',
 	});
 
 	await internalDeploySite({
@@ -224,6 +227,7 @@ test('Should keep the previous site if deploying the new one with different ID',
 		forcePathStyle: false,
 		skipPutAcl: false,
 		requestHandler: null,
+		logLevel: 'info',
 	});
 
 	await internalDeploySite({
@@ -311,6 +315,7 @@ test('Should not delete site with same prefix', async () => {
 		forcePathStyle: false,
 		skipPutAcl: false,
 		requestHandler: null,
+		logLevel: 'info',
 	});
 
 	await internalDeploySite({

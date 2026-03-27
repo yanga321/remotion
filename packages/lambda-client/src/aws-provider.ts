@@ -22,10 +22,10 @@ export type AwsProvider = {
 	requestHandler: RequestHandler | null | undefined;
 };
 
+import {EventEmitter} from 'node:events';
 import type {StorageClass} from '@aws-sdk/client-s3';
 import type {ProviderSpecifics} from '@remotion/serverless-client';
 import {expiryDays} from '@remotion/serverless-client';
-import {EventEmitter} from 'node:events';
 import {bucketExistsInRegionImplementation} from './bucket-exists';
 import {callFunctionAsyncImplementation} from './call-lambda-async';
 import {callFunctionWithStreamingImplementation} from './call-lambda-streaming';
@@ -54,7 +54,7 @@ import type {RequestHandler} from './types';
 import {lambdaWriteFileImplementation} from './write-file';
 
 if (
-	/^AWS_Lambda_nodejs(?:18|20)[.]x$/.test(
+	/^AWS_Lambda_nodejs(?:18|20|24)[.]x$/.test(
 		process.env.AWS_EXECUTION_ENV ?? '',
 	) === true
 ) {

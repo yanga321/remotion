@@ -1,4 +1,5 @@
 import {callFf} from './call-ffmpeg';
+import {convertNumberOfGifLoopsToFfmpegSyntax} from './convert-number-of-gif-loops-to-ffmpeg';
 import type {LogLevel} from './log-level';
 import {Log} from './logger';
 import type {CancelSignal} from './make-cancel-signal';
@@ -18,6 +19,7 @@ export const muxVideoAndAudio = async ({
 	cancelSignal,
 	addFaststart,
 	metadata,
+	numberOfGifLoops,
 }: {
 	videoOutput: string | null;
 	audioOutput: string | null;
@@ -30,6 +32,7 @@ export const muxVideoAndAudio = async ({
 	cancelSignal: CancelSignal | undefined;
 	addFaststart: boolean;
 	metadata?: Record<string, string> | null;
+	numberOfGifLoops: number | null;
 }) => {
 	const startTime = Date.now();
 	Log.verbose({indent, logLevel}, 'Muxing video and audio together');
@@ -44,6 +47,15 @@ export const muxVideoAndAudio = async ({
 		videoOutput ? 'copy' : null,
 		audioOutput ? '-c:a' : null,
 		audioOutput ? 'copy' : null,
+		// Set the exact output framerate to prevent drift when combining chunks.
+		// Without this, ffmpeg infers the framerate from the stream which can
+		// result in slightly imprecise values like 95940000/3197999 instead of 30/1.
+		videoOutput ? '-r' : null,
+		videoOutput ? String(fps) : null,
+		numberOfGifLoops === null ? null : '-loop',
+		numberOfGifLoops === null
+			? null
+			: convertNumberOfGifLoopsToFfmpegSyntax(numberOfGifLoops),
 		addFaststart ? '-movflags' : null,
 		addFaststart ? 'faststart' : null,
 		...makeMetadataArgs(metadata ?? {}),

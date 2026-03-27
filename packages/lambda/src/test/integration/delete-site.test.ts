@@ -1,5 +1,5 @@
-import {internalGetOrCreateBucket} from '@remotion/serverless';
 import {expect, test} from 'bun:test';
+import {internalGetOrCreateBucket} from '@remotion/serverless';
 import {internalDeleteSite} from '../../api/delete-site';
 import {internalDeploySite} from '../../api/deploy-site';
 import {mockFullClientSpecifics} from '../mock-implementation';
@@ -14,6 +14,7 @@ test('Return 0 total size if site did not exist', async () => {
 		forcePathStyle: false,
 		skipPutAcl: false,
 		requestHandler: null,
+		logLevel: 'info',
 	});
 	expect(
 		await internalDeleteSite({
@@ -36,6 +37,7 @@ test('Return more than 0 total size if site did not exist', async () => {
 		forcePathStyle: false,
 		skipPutAcl: false,
 		requestHandler: null,
+		logLevel: 'info',
 	});
 	const {siteName} = await internalDeploySite({
 		bucketName,

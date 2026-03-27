@@ -34,3 +34,13 @@ export type TransitionPresentationComponentProps<
 	passedProps: PresentationProps;
 	presentationDurationInFrames: number;
 };
+
+export type TransitionSeriesOverlayProps = {
+	readonly durationInFrames: number;
+	readonly offset?: number;
+	readonly children: React.ReactNode;
+	/**
+	 * @deprecated For internal use only
+	 */
+	readonly stack?: string;
+};

@@ -5,8 +5,8 @@ import type { NextPage } from "next";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import {
-  defaultMyCompProps,
   CompositionProps,
+  defaultMyCompProps,
   DURATION_IN_FRAMES,
   VIDEO_FPS,
   VIDEO_HEIGHT,
@@ -28,7 +28,7 @@ const Home: NextPage = () => {
 
   return (
     <div>
-      <div className="max-w-screen-md m-auto mb-5">
+      <div className="max-w-screen-md m-auto mb-5 px-4">
         <div className="overflow-hidden rounded-geist shadow-[0_0_200px_rgba(0,0,0,0.15)] mb-10 mt-16">
           <Player
             component={Main}

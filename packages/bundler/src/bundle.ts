@@ -1,18 +1,37 @@
-import type {GitSource, RenderDefaults} from '@remotion/studio-shared';
-import {getProjectName, SOURCE_MAP_ENDPOINT} from '@remotion/studio-shared';
 import fs, {promises} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {promisify} from 'node:util';
 import {isMainThread} from 'node:worker_threads';
+import type {GitSource, RenderDefaults} from '@remotion/studio-shared';
+import {getProjectName, SOURCE_MAP_ENDPOINT} from '@remotion/studio-shared';
 import webpack from 'webpack';
 import {copyDir} from './copy-dir';
 import {indexHtml} from './index-html';
 import {readRecursively} from './read-recursively';
+import {rspackConfig} from './rspack-config';
+import {clearCache} from './webpack-cache';
 import type {WebpackOverrideFn} from './webpack-config';
 import {webpackConfig} from './webpack-config';
 
 const promisified = promisify(webpack);
+
+const looksLikeCacheCorruption = (err: unknown): boolean => {
+	if (!(err instanceof Error)) {
+		return false;
+	}
+
+	const message = err.message + (err.stack ?? '');
+	return (
+		// Webpack wasm-hash crash when reading corrupted cache
+		message.includes('wasm-hash') ||
+		// General cache deserialization failures
+		message.includes('DeserializeError') ||
+		message.includes('Unexpected end of data') ||
+		// Cache pack file read failures
+		message.includes('PackFileCacheStrategy')
+	);
+};
 
 const prepareOutDir = async (specified: string | null) => {
 	if (specified) {
@@ -52,6 +71,7 @@ export type MandatoryLegacyBundleOptions = {
 	onSymlinkDetected: (path: string) => void;
 	keyboardShortcutsEnabled: boolean;
 	askAIEnabled: boolean;
+	rspack: boolean;
 };
 
 export type LegacyBundleOptions = Partial<MandatoryLegacyBundleOptions>;
@@ -65,17 +85,19 @@ export const getConfig = ({
 	bufferStateDelayInMilliseconds,
 	maxTimelineTracks,
 	experimentalClientSideRenderingEnabled,
+	experimentalVisualModeEnabled,
 }: {
 	outDir: string;
 	entryPoint: string;
 	resolvedRemotionRoot: string;
 	bufferStateDelayInMilliseconds: number | null;
 	experimentalClientSideRenderingEnabled: boolean;
+	experimentalVisualModeEnabled: boolean;
 	maxTimelineTracks: number | null;
-	onProgress?: (progress: number) => void;
-	options?: LegacyBundleOptions;
+	onProgress: (progress: number) => void;
+	options: MandatoryLegacyBundleOptions;
 }) => {
-	return webpackConfig({
+	const configArgs = {
 		entry: path.join(
 			require.resolve('@remotion/studio/renderEntry'),
 			'..',
@@ -84,9 +106,9 @@ export const getConfig = ({
 		),
 		userDefinedComponent: entryPoint,
 		outDir,
-		environment: 'production',
+		environment: 'production' as const,
 		webpackOverride: options?.webpackOverride ?? ((f) => f),
-		onProgress: (p) => {
+		onProgress: (p: number) => {
 			onProgress?.(p);
 		},
 		enableCaching: options?.enableCaching ?? true,
@@ -96,8 +118,16 @@ export const getConfig = ({
 		bufferStateDelayInMilliseconds,
 		poll: null,
 		experimentalClientSideRenderingEnabled,
+		experimentalVisualModeEnabled,
 		askAIEnabled: options?.askAIEnabled ?? true,
-	});
+		extraPlugins: [],
+	};
+
+	if (options.rspack) {
+		return rspackConfig(configArgs);
+	}
+
+	return webpackConfig(configArgs);
 };
 
 type NewBundleOptions = {
@@ -110,6 +140,7 @@ type NewBundleOptions = {
 	bufferStateDelayInMilliseconds: number | null;
 	audioLatencyHint: AudioContextLatencyCategory | null;
 	experimentalClientSideRenderingEnabled: boolean;
+	experimentalVisualModeEnabled: boolean;
 	renderDefaults: RenderDefaults | null;
 };
 
@@ -227,20 +258,79 @@ export const internalBundle = async (
 		maxTimelineTracks: actualArgs.maxTimelineTracks,
 		experimentalClientSideRenderingEnabled:
 			actualArgs.experimentalClientSideRenderingEnabled,
+		experimentalVisualModeEnabled: actualArgs.experimentalVisualModeEnabled,
 	});
 
-	const output = await promisified([config]);
-	if (isMainThread) {
-		process.chdir(currentCwd);
-	}
+	if (actualArgs.rspack) {
+		const {rspack: rspackFn} = require('@rspack/core');
+		const rspackCompiler = rspackFn(config);
+		const rspackOutput = await new Promise<{
+			toJson: (opts: unknown) => {
+				errors?: Array<{message: string; details: string}>;
+			};
+		}>((resolve, reject) => {
+			rspackCompiler.run(
+				(
+					err: Error | null,
+					stats: {
+						toJson: (opts: unknown) => {
+							errors?: Array<{message: string; details: string}>;
+						};
+					},
+				) => {
+					if (err) {
+						reject(err);
+						return;
+					}
 
-	if (!output) {
-		throw new Error('Expected webpack output');
-	}
+					rspackCompiler.close(() => {
+						resolve(stats);
+					});
+				},
+			);
+		});
 
-	const {errors} = output.toJson();
-	if (errors !== undefined && errors.length > 0) {
-		throw new Error(errors[0].message + '\n' + errors[0].details);
+		if (isMainThread) {
+			process.chdir(currentCwd);
+		}
+
+		const {errors} = rspackOutput.toJson({});
+		if (errors !== undefined && errors.length > 0) {
+			throw new Error(errors[0].message + '\n' + errors[0].details);
+		}
+	} else {
+		const runWebpack = async () => {
+			const output = (await promisified([config as webpack.Configuration])) as
+				| webpack.MultiStats
+				| undefined;
+			if (isMainThread) {
+				process.chdir(currentCwd);
+			}
+
+			if (!output) {
+				throw new Error('Expected webpack output');
+			}
+
+			const {errors} = output.toJson();
+			if (errors !== undefined && errors.length > 0) {
+				throw new Error(errors[0].message + '\n' + errors[0].details);
+			}
+		};
+
+		try {
+			await runWebpack();
+		} catch (err) {
+			if (looksLikeCacheCorruption(err) && actualArgs.enableCaching !== false) {
+				// eslint-disable-next-line no-console
+				console.warn(
+					'Webpack cache appears to be corrupted. Clearing cache and retrying...',
+				);
+				await clearCache(resolvedRemotionRoot, 'production');
+				await runWebpack();
+			} else {
+				throw err;
+			}
+		}
 	}
 
 	const publicPath = actualArgs?.publicPath ?? '/';
@@ -363,9 +453,12 @@ export async function bundle(...args: Arguments): Promise<string> {
 		audioLatencyHint: actualArgs.audioLatencyHint ?? null,
 		experimentalClientSideRenderingEnabled:
 			actualArgs.experimentalClientSideRenderingEnabled ?? false,
+		experimentalVisualModeEnabled:
+			actualArgs.experimentalVisualModeEnabled ?? false,
 		renderDefaults: actualArgs.renderDefaults ?? null,
 		askAIEnabled: actualArgs.askAIEnabled ?? true,
 		keyboardShortcutsEnabled: actualArgs.keyboardShortcutsEnabled ?? true,
+		rspack: actualArgs.rspack ?? false,
 	});
 	return result;
 }

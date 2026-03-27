@@ -24,6 +24,14 @@ const {
 	binariesDirectoryOption,
 	mediaCacheSizeInBytesOption,
 	darkModeOption,
+	browserExecutableOption,
+	userAgentOption,
+	disableWebSecurityOption,
+	ignoreCertificateErrorsOption,
+	overrideHeightOption,
+	overrideWidthOption,
+	overrideFpsOption,
+	overrideDurationOption,
 } = BrowserSafeApis.options;
 
 export const stillCommand = async (
@@ -41,21 +49,37 @@ export const stillCommand = async (
 		region,
 	} = await renderArgsCheck(STILL_COMMAND, args, logLevel);
 
-	const {
-		envVariables,
-		inputProps,
-		stillFrame,
-		height,
-		width,
-		browserExecutable,
-		userAgent,
-		disableWebSecurity,
-		ignoreCertificateErrors,
-	} = CliInternals.getCliOptions({
-		isStill: false,
+	const {envVariables, inputProps, stillFrame} = CliInternals.getCliOptions({
+		isStill: true,
 		logLevel,
 		indent: false,
 	});
+
+	const height = overrideHeightOption.getValue({
+		commandLine: CliInternals.parsedCli,
+	}).value;
+	const width = overrideWidthOption.getValue({
+		commandLine: CliInternals.parsedCli,
+	}).value;
+	const fps = overrideFpsOption.getValue({
+		commandLine: CliInternals.parsedCli,
+	}).value;
+	const durationInFrames = overrideDurationOption.getValue({
+		commandLine: CliInternals.parsedCli,
+	}).value;
+
+	const browserExecutable = browserExecutableOption.getValue({
+		commandLine: CliInternals.parsedCli,
+	}).value;
+	const userAgent = userAgentOption.getValue({
+		commandLine: CliInternals.parsedCli,
+	}).value;
+	const disableWebSecurity = disableWebSecurityOption.getValue({
+		commandLine: CliInternals.parsedCli,
+	}).value;
+	const ignoreCertificateErrors = ignoreCertificateErrorsOption.getValue({
+		commandLine: CliInternals.parsedCli,
+	}).value;
 
 	let composition = args[1];
 
@@ -142,6 +166,8 @@ export const stillCommand = async (
 				timeoutInMilliseconds: puppeteerTimeout,
 				height,
 				width,
+				fps,
+				durationInFrames,
 				server: await server,
 				offthreadVideoCacheSizeInBytes,
 				binariesDirectory,
@@ -158,15 +184,17 @@ export const stillCommand = async (
 		composition = compositionId;
 	}
 
+	const {stillImageFormatOption} = BrowserSafeApis.options;
+
 	const {format: imageFormat, source: imageFormatReason} =
 		CliInternals.determineFinalStillImageFormat({
 			downloadName,
 			outName: outName ?? null,
-			cliFlag: CliInternals.parsedCli['image-format'] ?? null,
+			configuredImageFormat: stillImageFormatOption.getValue({
+				commandLine: CliInternals.parsedCli,
+			}).value,
 			isLambda: true,
 			fromUi: null,
-			configImageFormat:
-				ConfigInternals.getUserPreferredStillImageFormat() ?? null,
 		});
 	Log.verbose(
 		{indent: false, logLevel},
@@ -234,6 +262,8 @@ ${downloadName ? `    Downloaded File = ${downloadName}` : ''}
 		scale,
 		forceHeight: height,
 		forceWidth: width,
+		forceFps: fps,
+		forceDurationInFrames: durationInFrames,
 		forceBucketName,
 		outName,
 		logLevel,

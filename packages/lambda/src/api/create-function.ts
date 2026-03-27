@@ -1,3 +1,4 @@
+import {readFileSync} from 'node:fs';
 import {
 	CreateLogGroupCommand,
 	PutRetentionPolicyCommand,
@@ -19,11 +20,30 @@ import {
 import {LOG_GROUP_PREFIX} from '@remotion/lambda-client/constants';
 import type {LogLevel} from '@remotion/renderer';
 import {RenderInternals} from '@remotion/renderer';
-import {readFileSync} from 'node:fs';
 import {VERSION} from 'remotion/version';
 import {getLayers} from '../shared/get-layers';
 import {lambdaInsightsExtensions} from '../shared/lambda-insights-extensions';
 import {ROLE_NAME} from './iam-validation/suggested-policy';
+
+type CreateFunctionInput = {
+	createCloudWatchLogGroup: boolean;
+	region: AwsRegion;
+	zipFile: string;
+	functionName: string;
+	accountId: string;
+	memorySizeInMb: number;
+	timeoutInSeconds: number;
+	alreadyCreated: boolean;
+	retentionInDays: number;
+	ephemerealStorageInMb: number;
+	customRoleArn: string;
+	enableLambdaInsights: boolean;
+	logLevel: LogLevel;
+	vpcSubnetIds: string;
+	vpcSecurityGroupIds: string;
+	runtimePreference: RuntimePreference;
+	requestHandler: RequestHandler | null;
+};
 
 export const createFunction = async ({
 	createCloudWatchLogGroup,
@@ -43,25 +63,7 @@ export const createFunction = async ({
 	vpcSecurityGroupIds,
 	runtimePreference,
 	requestHandler,
-}: {
-	createCloudWatchLogGroup: boolean;
-	region: AwsRegion;
-	zipFile: string;
-	functionName: string;
-	accountId: string;
-	memorySizeInMb: number;
-	timeoutInSeconds: number;
-	alreadyCreated: boolean;
-	retentionInDays: number;
-	ephemerealStorageInMb: number;
-	customRoleArn: string;
-	enableLambdaInsights: boolean;
-	logLevel: LogLevel;
-	vpcSubnetIds: string;
-	vpcSecurityGroupIds: string;
-	runtimePreference: RuntimePreference;
-	requestHandler: RequestHandler | null;
-}): Promise<{FunctionName: string}> => {
+}: CreateFunctionInput): Promise<{FunctionName: string}> => {
 	if (createCloudWatchLogGroup) {
 		RenderInternals.Log.verbose(
 			{indent: false, logLevel},
@@ -161,7 +163,7 @@ export const createFunction = async ({
 				FunctionName: functionName,
 				Handler: 'index.handler',
 				Role: customRoleArn ?? defaultRoleName,
-				Runtime: 'nodejs20.x',
+				Runtime: 'nodejs24.x',
 				Description: 'Renders a Remotion video.',
 				MemorySize: memorySizeInMb,
 				Timeout: timeoutInSeconds,
@@ -261,7 +263,7 @@ export const createFunction = async ({
 		'Locking the runtime version of the function...',
 	);
 
-	const RuntimeVersionArn = `arn:aws:lambda:${region}::runtime:da57c20c4b965d5b75540f6865a35fc8030358e33ec44ecfed33e90901a27a72`;
+	const RuntimeVersionArn = `arn:aws:lambda:${region}::runtime:58a37e8413ed69058c4ac3b1df642118591f17d40def93d6101f867c72cd03c2`;
 
 	try {
 		await LambdaClientInternals.getLambdaClient(

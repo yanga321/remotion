@@ -1,10 +1,10 @@
+import {spawn} from 'node:child_process';
 import {RenderInternals} from '@remotion/renderer';
 import {
 	extraPackages,
 	type InstallPackageRequest,
 	type InstallPackageResponse,
 } from '@remotion/studio-shared';
-import {spawn} from 'node:child_process';
 import {VERSION} from 'remotion/version';
 import {getInstallCommand} from '../../helpers/install-command';
 import type {ApiHandler} from '../api-types';
@@ -33,7 +33,12 @@ export const handleInstallPackage: ApiHandler<
 		}
 	}
 
-	const manager = getPackageManager(remotionRoot, undefined, 0);
+	const manager = getPackageManager({
+		remotionRoot,
+		packageManager: undefined,
+		dirUp: 0,
+		logLevel,
+	});
 	if (manager === 'unknown') {
 		throw new Error(
 			`No lockfile was found in your project (one of ${lockFilePaths

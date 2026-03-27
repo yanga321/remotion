@@ -3,12 +3,13 @@ import React, {useCallback, useMemo, useState} from 'react';
 import {BACKGROUND} from '../helpers/colors';
 import {useMobileLayout} from '../helpers/mobile-layout';
 import {useMenuStructure} from '../helpers/use-menu-structure';
+import {Row, Spacing} from './layout';
 import type {MenuId} from './Menu/MenuItem';
 import {MenuItem} from './Menu/MenuItem';
 import {MenuBuildIndicator} from './MenuBuildIndicator';
 import {SidebarCollapserControls} from './SidebarCollapserControls';
+import {UndoRedoButtons} from './UndoRedoButtons';
 import {UpdateCheck} from './UpdateCheck';
-import {Row, Spacing} from './layout';
 
 const row: React.CSSProperties = {
 	alignItems: 'center',
@@ -139,6 +140,7 @@ export const MenuToolbar: React.FC<{
 			<MenuBuildIndicator />
 			<div style={flex} />
 			<div style={fixedWidthRight}>
+				{readOnlyStudio ? null : <UndoRedoButtons />}
 				<SidebarCollapserControls />
 			</div>
 			<Spacing x={1} />

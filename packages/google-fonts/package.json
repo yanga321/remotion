@@ -3,14 +3,15 @@
 		"url": "https://github.com/remotion-dev/remotion/tree/main/packages/google-fonts"
 	},
 	"name": "@remotion/google-fonts",
-	"version": "4.0.410",
+	"version": "4.0.441",
 	"description": "Use Google Fonts in Remotion",
 	"main": "dist/cjs/index.js",
 	"module": "dist/esm/index.mjs",
 	"scripts": {
-		"make": "tsc -d && bun --env-file=../.env.bundle bundle.ts",
+		"make": "tsgo -d && bun --env-file=../.env.bundle bundle.ts",
 		"generate": "bun --env-file=.env scripts/update-font-db.ts",
-		"formatting": "prettier --experimental-cli src --check"
+		"formatting": "oxfmt src --check",
+		"format": "oxfmt src"
 	},
 	"license": "SEE LICENSE IN LICENSE.md",
 	"dependencies": {
@@ -20,7 +21,7 @@
 		"@types/css-font-loading-module": "0.0.14",
 		"@types/prettier": "^2.7.1",
 		"postcss": "8.4.47",
-		"prettier": "catalog:"
+		"@typescript/native-preview": "catalog:"
 	},
 	"types": "dist/cjs/index.d.ts",
 	"typesVersions": {
@@ -198,6 +199,9 @@
 			],
 			"AlumniSansSC": [
 				"dist/cjs/AlumniSansSC.d.ts"
+			],
+			"Alyamama": [
+				"dist/cjs/Alyamama.d.ts"
 			],
 			"Amarante": [
 				"dist/cjs/Amarante.d.ts"
@@ -619,6 +623,18 @@
 			"Besley": [
 				"dist/cjs/Besley.d.ts"
 			],
+			"BetaniaPatmos": [
+				"dist/cjs/BetaniaPatmos.d.ts"
+			],
+			"BetaniaPatmosGDL": [
+				"dist/cjs/BetaniaPatmosGDL.d.ts"
+			],
+			"BetaniaPatmosIn": [
+				"dist/cjs/BetaniaPatmosIn.d.ts"
+			],
+			"BetaniaPatmosInGDL": [
+				"dist/cjs/BetaniaPatmosInGDL.d.ts"
+			],
 			"BethEllen": [
 				"dist/cjs/BethEllen.d.ts"
 			],
@@ -759,6 +775,15 @@
 			],
 			"BowlbyOneSC": [
 				"dist/cjs/BowlbyOneSC.d.ts"
+			],
+			"BpmfHuninn": [
+				"dist/cjs/BpmfHuninn.d.ts"
+			],
+			"BpmfIansui": [
+				"dist/cjs/BpmfIansui.d.ts"
+			],
+			"BpmfZihiKaiStd": [
+				"dist/cjs/BpmfZihiKaiStd.d.ts"
 			],
 			"BraahOne": [
 				"dist/cjs/BraahOne.d.ts"
@@ -1194,6 +1219,9 @@
 			],
 			"DarumadropOne": [
 				"dist/cjs/DarumadropOne.d.ts"
+			],
+			"Datatype": [
+				"dist/cjs/Datatype.d.ts"
 			],
 			"DavidLibre": [
 				"dist/cjs/DavidLibre.d.ts"
@@ -1825,6 +1853,9 @@
 			"Gurajada": [
 				"dist/cjs/Gurajada.d.ts"
 			],
+			"GveretLevin": [
+				"dist/cjs/GveretLevin.d.ts"
+			],
 			"Gwendolyn": [
 				"dist/cjs/Gwendolyn.d.ts"
 			],
@@ -2014,6 +2045,9 @@
 			"Iceland": [
 				"dist/cjs/Iceland.d.ts"
 			],
+			"Idiqlat": [
+				"dist/cjs/Idiqlat.d.ts"
+			],
 			"Imbue": [
 				"dist/cjs/Imbue.d.ts"
 			],
@@ -2067,6 +2101,12 @@
 			],
 			"InterTight": [
 				"dist/cjs/InterTight.d.ts"
+			],
+			"IosevkaCharon": [
+				"dist/cjs/IosevkaCharon.d.ts"
+			],
+			"IosevkaCharonMono": [
+				"dist/cjs/IosevkaCharonMono.d.ts"
 			],
 			"IrishGrover": [
 				"dist/cjs/IrishGrover.d.ts"
@@ -4198,6 +4238,9 @@
 			"RampartOne": [
 				"dist/cjs/RampartOne.d.ts"
 			],
+			"Ramsina": [
+				"dist/cjs/Ramsina.d.ts"
+			],
 			"Ranchers": [
 				"dist/cjs/Ranchers.d.ts"
 			],
@@ -4458,6 +4501,9 @@
 			],
 			"Rye": [
 				"dist/cjs/Rye.d.ts"
+			],
+			"SNPro": [
+				"dist/cjs/SNPro.d.ts"
 			],
 			"STIXTwoText": [
 				"dist/cjs/STIXTwoText.d.ts"

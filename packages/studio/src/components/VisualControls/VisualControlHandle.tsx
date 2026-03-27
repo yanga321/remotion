@@ -1,22 +1,21 @@
 import React, {useCallback, useContext, useEffect, useState} from 'react';
-import {Internals} from 'remotion';
 import {NoReactInternals} from 'remotion/no-react';
+import {FastRefreshContext} from '../../fast-refresh-context';
+import {getVisualControlEditedValue} from '../../visual-controls/get-current-edited-value';
 import {
 	SetVisualControlsContext,
 	VisualControlsContext,
 	type VisualControlValue,
 } from '../../visual-controls/VisualControls';
-import {getVisualControlEditedValue} from '../../visual-controls/get-current-edited-value';
-import {showNotification} from '../Notifications/NotificationCenter';
-import type {UpdaterFunction} from '../RenderModal/SchemaEditor/ZodSwitch';
-import {ZodSwitch} from '../RenderModal/SchemaEditor/ZodSwitch';
-import {extractEnumJsonPaths} from '../RenderModal/SchemaEditor/extract-enum-json-paths';
-import {useLocalState} from '../RenderModal/SchemaEditor/local-state';
-import {applyVisualControlChange} from '../RenderQueue/actions';
 import {useZodIfPossible, useZodTypesIfPossible} from '../get-zod-if-possible';
 import {Spacing} from '../layout';
-import {VisualControlHandleHeader} from './VisualControlHandleHeader';
+import {showNotification} from '../Notifications/NotificationCenter';
+import {extractEnumJsonPaths} from '../RenderModal/SchemaEditor/extract-enum-json-paths';
+import type {UpdaterFunction} from '../RenderModal/SchemaEditor/ZodSwitch';
+import {ZodSwitch} from '../RenderModal/SchemaEditor/ZodSwitch';
+import {applyVisualControlChange} from '../RenderQueue/actions';
 import {useOriginalFileName} from './get-original-stack-trace';
+import {VisualControlHandleHeader} from './VisualControlHandleHeader';
 
 export const VisualControlHandle: React.FC<{
 	readonly value: VisualControlValue;
@@ -31,10 +30,10 @@ export const VisualControlHandle: React.FC<{
 
 	const state = useContext(VisualControlsContext);
 	const {updateValue} = useContext(SetVisualControlsContext);
-	const {fastRefreshes} = useContext(Internals.NonceContext);
-	const {increaseManualRefreshes} = useContext(Internals.SetNonceContext);
+	const {fastRefreshes, increaseManualRefreshes} =
+		useContext(FastRefreshContext);
 
-	const [saving, setSaving] = useState(false);
+	const [_saving, setSaving] = useState(false);
 
 	const currentValue = getVisualControlEditedValue({
 		handles: state.handles,
@@ -43,21 +42,11 @@ export const VisualControlHandle: React.FC<{
 
 	const originalFileName = useOriginalFileName(value.stack);
 
-	const {localValue, RevisionContextProvider, onChange} = useLocalState({
-		schema: value.schema,
-		setValue: (updater) => {
-			updateValue(keyName, updater(currentValue));
-			increaseManualRefreshes();
-		},
-		unsavedValue: currentValue,
-		savedValue: value.valueInCode,
-	});
-
 	const disableSave =
 		window.remotion_isReadOnlyStudio || originalFileName.type !== 'loaded';
 
-	const onSave: UpdaterFunction<unknown> = useCallback(
-		(updater) => {
+	const saveToFile = useCallback(
+		(updater: (old: unknown) => unknown) => {
 			if (disableSave) {
 				return;
 			}
@@ -86,11 +75,14 @@ export const VisualControlHandle: React.FC<{
 							{
 								id: keyName,
 								newValueSerialized:
-									NoReactInternals.serializeJSONWithSpecialTypes({
-										data: val as Record<string, unknown>,
-										indent: 2,
-										staticBase: window.remotion_staticBase,
-									}).serializedString,
+									val === undefined
+										? ''
+										: NoReactInternals.serializeJSONWithSpecialTypes({
+												data: val as Record<string, unknown>,
+												indent: 2,
+												staticBase: window.remotion_staticBase,
+											}).serializedString,
+								newValueIsUndefined: val === undefined,
 								enumPaths,
 							},
 						],
@@ -116,25 +108,29 @@ export const VisualControlHandle: React.FC<{
 		setSaving(false);
 	}, [fastRefreshes]);
 
+	const setValue: UpdaterFunction<unknown> = useCallback(
+		(updater, {shouldSave}) => {
+			updateValue(keyName, updater(currentValue));
+			increaseManualRefreshes();
+			if (shouldSave) {
+				saveToFile(updater);
+			}
+		},
+		[currentValue, increaseManualRefreshes, keyName, saveToFile, updateValue],
+	);
+
 	return (
 		<>
 			<VisualControlHandleHeader originalFileName={originalFileName} />
 			<Spacing block y={0.5} />
-			<RevisionContextProvider>
-				<ZodSwitch
-					mayPad
-					schema={value.schema}
-					showSaveButton={!disableSave}
-					saving={saving}
-					saveDisabledByParent={false}
-					onSave={onSave}
-					jsonPath={[keyName]}
-					value={localValue.value}
-					defaultValue={value.valueInCode}
-					setValue={onChange}
-					onRemove={null}
-				/>
-			</RevisionContextProvider>
+			<ZodSwitch
+				mayPad
+				schema={value.schema}
+				jsonPath={[keyName]}
+				value={currentValue}
+				setValue={setValue}
+				onRemove={null}
+			/>
 		</>
 	);
 };

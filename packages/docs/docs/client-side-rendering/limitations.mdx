@@ -6,9 +6,11 @@ title: Limitations of client-side rendering
 ---
 
 :::warning
-Very experimental feature - expect bugs and breaking changes at any time.  
+Experimental feature - expect bugs and breaking changes at any time.  
 [Track progress on GitHub](https://github.com/remotion-dev/remotion/issues/5913) and discuss in the [`#web-renderer`](https://remotion.dev/discord) channel on Discord.
 :::
+
+The browser must support the [WebCodecs API](https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API). See [Browser support](/docs/client-side-rendering#browser-support) for minimum browser versions.
 
 Unlike server-side rendering, where a full screenshot it taken, in client-side rendering the layout and styles of your video are being emulated and drawn to a canvas.
 
@@ -55,15 +57,21 @@ The `color` property is <a style={{color: 'green'}}>supported</a>.
 The `-webkit-text-fill-color` property is <a style={{color: 'green'}}>supported</a>.  
 The `font-family` property is <a style={{color: 'green'}}>supported</a>.  
 The `font-size` property is <a style={{color: 'green'}}>supported</a>.  
+The `font-style` property is <a style={{color: 'green'}}>supported</a>.  
 The `font-weight` property is <a style={{color: 'green'}}>supported</a>.  
 The `line-height` property is <a style={{color: 'green'}}>supported</a>.  
-The `letter-spacing` property is <a style={{color: 'green'}}>supported</a>.  
-The `text-transform` property is <a style={{color: 'green'}}>supported</a>.  
-The `direction` HTML attribute is <a style={{color: 'green'}}>supported</a>.  
-The `writing-mode` property is <a style={{color: 'red'}}>not supported</a>.  
-The `text-decoration` property is <a style={{color: 'red'}}>not supported</a>.  
-The `text-shadow` property is <a style={{color: 'red'}}>not supported</a>.  
-The `-webkit-text-stroke` property is <a style={{color: 'red'}}>not supported</a>.
+The `letter-spacing` property is <a style={{color: 'green'}}>supported</a>.
+The `word-spacing` property is <a style={{color: 'green'}}>supported</a>.
+The `text-transform` property is <a style={{color: 'green'}}>supported</a>.
+The `text-rendering` property is <a style={{color: 'green'}}>supported</a>.
+The `font-variant-caps` property is <a style={{color: 'green'}}>supported</a>.
+The `font-kerning` property is <a style={{color: 'green'}}>supported</a>.
+The `font-stretch` property is <a style={{color: 'green'}}>supported</a>.
+The `direction` HTML attribute is <a style={{color: 'green'}}>supported</a>.
+The `writing-mode` property is <a style={{color: 'red'}}>not supported</a>.
+The `text-decoration` property is <a style={{color: 'red'}}>not supported</a>.
+The `text-shadow` property is <a style={{color: 'green'}}>supported</a>.
+The `-webkit-text-stroke`, `-webkit-text-stroke-color`, `-webkit-text-stroke-width`, `paint-order` properties are <a style={{color: 'green'}}>supported</a>.
 
 ## Shadows
 
@@ -75,6 +83,27 @@ Basic `box-shadow` are <a style={{color: 'green'}}>supported</a>.
 
 `mask-image` with a linear gradient is <a style={{color: 'green'}}>supported</a>.  
 Other `mask-image` values are <a style={{color: 'red'}}>not supported</a>.
+
+## Filters
+
+The `filter` property is <a style={{color: 'green'}}>supported</a> with the following filter functions:
+
+- `blur()` is <a style={{color: 'green'}}>supported</a>.
+- `brightness()` is <a style={{color: 'green'}}>supported</a>.
+- `contrast()` is <a style={{color: 'green'}}>supported</a>.
+- `drop-shadow()` is <a style={{color: 'green'}}>supported</a>.
+- `grayscale()` is <a style={{color: 'green'}}>supported</a>.
+- `hue-rotate()` is <a style={{color: 'green'}}>supported</a>.
+- `invert()` is <a style={{color: 'green'}}>supported</a>.
+- `opacity()` is <a style={{color: 'green'}}>supported</a>.
+- `saturate()` is <a style={{color: 'green'}}>supported</a>.
+- `sepia()` is <a style={{color: 'green'}}>supported</a>.
+- Multiple combined filters are <a style={{color: 'green'}}>supported</a>.
+- `url()` referencing inline SVG filters is <a style={{color: 'red'}}>not supported</a>.
+
+:::warning
+Filters are not supported in Safari/WebKit. Use Chrome or Firefox for filter support.
+:::
 
 ## Supported elements
 
@@ -104,7 +133,6 @@ All styles not explicitly mentioned are <a style={{color: 'red'}}>not supported<
 Here is a selection of unsupported styles:
 
 - `clip-path`
-- `filter` (blur, brightness, contrast, etc.)
 - `backdrop-filter`
 - `mix-blend-mode`
 - `background-blend-mode`
@@ -145,6 +173,10 @@ const MyComp = () => {
 ## Video and media constraints
 
 The limitations from [`@remotion/media`](/docs/media/support) apply.
+
+## Firefox does not support AAC encoding
+
+Firefox does not support encoding AAC audio via WebCodecs. When rendering in Firefox, use Opus audio (WebM container) instead of AAC (MP4 container).
 
 ## Single concurrency
 

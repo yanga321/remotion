@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
-import dynamic from "next/dynamic";
 import type { Monaco } from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
 import {
   MonacoJsxSyntaxHighlight,
   getWorker,
 } from "monaco-jsx-syntax-highlight";
+import dynamic from "next/dynamic";
+import React, { useEffect, useRef } from "react";
 
 import { EditorHeader } from "./EditorHeader";
 import { StreamingOverlay } from "./StreamingOverlay";
@@ -269,10 +269,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   };
 
   return (
-    <div className="flex-2 h-[500px] lg:h-full flex flex-col min-w-0">
-      <h2 className="text-sm font-medium text-muted-foreground mb-3">
-        Remotion Code
-      </h2>
+    <div className="h-full flex flex-col min-w-0">
       <div className="flex-1 flex flex-col bg-background-editor rounded-lg overflow-hidden">
         <EditorHeader filename="MyAnimation.tsx" code={code} />
         <div className="flex-1 overflow-hidden relative">

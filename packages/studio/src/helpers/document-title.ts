@@ -3,8 +3,6 @@ import type {AnyRenderJob} from '../components/RenderQueue/context';
 import {isClientRenderJob} from '../components/RenderQueue/context';
 
 let currentItemName: string | null = null;
-let unsavedProps = false;
-let tabInactive = false;
 let renderJobs: AnyRenderJob[] = [];
 
 export const setCurrentCanvasContentId = (id: string | null) => {
@@ -19,21 +17,10 @@ export const setCurrentCanvasContentId = (id: string | null) => {
 	updateTitle();
 };
 
-export const setUnsavedProps = (unsaved: boolean) => {
-	window.remotion_unsavedProps = unsaved;
-
-	unsavedProps = unsaved;
-};
-
 export const setRenderJobs = (jobs: AnyRenderJob[]) => {
 	renderJobs = jobs;
 	updateTitle();
 };
-
-document.addEventListener('visibilitychange', () => {
-	tabInactive = document.visibilityState === 'hidden';
-	updateTitle();
-});
 
 const productName = 'Remotion Studio';
 const suffix = `- ${productName}`;
@@ -48,7 +35,6 @@ const updateTitle = () => {
 
 	document.title = [
 		getProgressInBrackets(currentItemName, renderJobs),
-		unsavedProps && tabInactive ? '✏️' : null,
 		`${currentCompTitle} ${suffix}`,
 	]
 		.filter(NoReactInternals.truthy)
@@ -70,9 +56,9 @@ const getProgressInBrackets = (
 
 	let progInPercent: number;
 	if (isClientRenderJob(currentRender)) {
-		const {renderedFrames, totalFrames} = currentRender.progress;
+		const {encodedFrames, totalFrames} = currentRender.progress;
 		progInPercent =
-			totalFrames > 0 ? Math.ceil((renderedFrames / totalFrames) * 100) : 0;
+			totalFrames > 0 ? Math.ceil((encodedFrames / totalFrames) * 100) : 0;
 	} else {
 		progInPercent = Math.ceil(currentRender.progress.value * 100);
 	}
@@ -83,8 +69,3 @@ const getProgressInBrackets = (
 			: `[${progInPercent}% ${currentRender.compositionId}]`;
 	return progressInBrackets;
 };
-
-document.addEventListener('visibilitychange', () => {
-	tabInactive = document.visibilityState === 'hidden';
-	updateTitle();
-});

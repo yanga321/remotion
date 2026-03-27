@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import React, {forwardRef, useCallback, useContext} from 'react';
-import {Sequence} from '../Sequence.js';
 import {getAbsoluteSrc} from '../absolute-src.js';
 import {calculateMediaDuration} from '../calculate-media-duration.js';
 import {addSequenceStackTraces} from '../enable-sequence-stack-traces.js';
 import {Loop} from '../loop/index.js';
 import {usePreload} from '../prefetch.js';
+import {Sequence} from '../Sequence.js';
 import {useRemotionEnvironment} from '../use-remotion-environment.js';
 import {useVideoConfig} from '../use-video-config.js';
 import {validateMediaProps} from '../validate-media-props.js';
@@ -13,10 +13,10 @@ import {
 	resolveTrimProps,
 	validateMediaTrimProps,
 } from '../validate-start-from-props.js';
-import {VideoForPreview} from './VideoForPreview.js';
-import {VideoForRendering} from './VideoForRendering.js';
 import {DurationsContext} from './duration-state.js';
 import type {RemotionMainVideoProps, RemotionVideoProps} from './props';
+import {VideoForPreview} from './VideoForPreview.js';
+import {VideoForRendering} from './VideoForRendering.js';
 
 const VideoForwardingFunction: React.ForwardRefRenderFunction<
 	HTMLVideoElement,
@@ -94,6 +94,7 @@ const VideoForwardingFunction: React.ForwardRefRenderFunction<
 				<Html5Video
 					{...propsOtherThanLoop}
 					ref={ref}
+					stack={stack}
 					_remotionInternalNativeLoopPassed
 				/>
 			);
@@ -115,6 +116,7 @@ const VideoForwardingFunction: React.ForwardRefRenderFunction<
 				<Html5Video
 					{...propsOtherThanLoop}
 					ref={ref}
+					stack={stack}
 					_remotionInternalNativeLoopPassed
 				/>
 			</Loop>
@@ -130,13 +132,18 @@ const VideoForwardingFunction: React.ForwardRefRenderFunction<
 				layout="none"
 				from={0 - (trimBeforeValue ?? 0)}
 				showInTimeline={false}
-				durationInFrames={trimAfterValue}
+				durationInFrames={
+					trimAfterValue === undefined
+						? undefined
+						: trimAfterValue / (props.playbackRate ?? 1)
+				}
 				name={name}
 			>
 				<Html5Video
 					pauseWhenBuffering={pauseWhenBuffering ?? false}
 					{...otherProps}
 					ref={ref}
+					stack={stack}
 				/>
 			</Sequence>
 		);
@@ -186,6 +193,6 @@ addSequenceStackTraces(Html5Video);
 
 /**
  * @deprecated This component has been renamed to `Html5Video`.
- * @see [Documentation](https://remotion.dev/docs/mediabunny/new-video)
+ * @see [Documentation](https://www.remotion.dev/docs/html5-video)
  */
 export const Video = Html5Video;

@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+import type {SymbolicatedStackFrame} from '@remotion/studio-shared';
+import {reloadUrl} from '../../helpers/url-state';
 import {setErrorsRef} from '../remotion-overlay/Overlay';
 import {massageWarning} from './effects/format-warning';
 import {
@@ -9,14 +17,6 @@ import {
 	register as registerStackTraceLimit,
 	unregister as unregisterStackTraceLimit,
 } from './effects/stack-trace-limit';
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-import type {SymbolicatedStackFrame} from '@remotion/studio-shared';
-import {reloadUrl} from '../../helpers/url-state';
 import {
 	register as registerError,
 	unregister as unregisterError,
@@ -74,7 +74,6 @@ const crashWithFrames = (crash: () => void) => (error: Error) => {
 		// eslint-disable-next-line no-console
 		console.log('Hook order changed. Reloading app...');
 
-		window.remotion_unsavedProps = false;
 		reloadUrl();
 	} else {
 		setErrorsRef.current?.addError(error);

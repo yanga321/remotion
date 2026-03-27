@@ -20,8 +20,11 @@ import {threeDFlattening} from './fixtures/clipped';
 import {complexNestedSvg} from './fixtures/complex-nested-svg';
 import {deeplyNestedTransform} from './fixtures/deeply-nested-transform';
 import {displayNone} from './fixtures/display-none';
+import {filter} from './fixtures/filter';
+import {filterImage} from './fixtures/filter-image';
 import {flexContainer} from './fixtures/flex-container';
 import {flexPositionedScaled} from './fixtures/flex-positioned-scaled';
+import {gradientTransparentKeyword} from './fixtures/gradient-transparent-keyword';
 import {hugeImageTransform} from './fixtures/huge-image-transform';
 import {inside3dTransform} from './fixtures/inside-3d-transform';
 import {lineHeight} from './fixtures/line-height';
@@ -51,11 +54,16 @@ import {simpleRotatedSvg} from './fixtures/simple-rotated-svg';
 import {svgExplicitDimensions} from './fixtures/svg-explicit-dimensions';
 import {backgroundClipText} from './fixtures/text/background-clip-text';
 import {backgroundClipText3dTransform} from './fixtures/text/background-clip-text-3d-transform';
+import {filterText} from './fixtures/text/filter-text';
+import {fontStyle} from './fixtures/text/font-style';
+import {fontVariantCaps} from './fixtures/text/font-variant-caps';
 import {letterSpacing} from './fixtures/text/letter-spacing';
 import {paragraphs} from './fixtures/text/paragraphs';
 import {textFixture} from './fixtures/text/text';
+import {textShadow} from './fixtures/text/text-shadow';
 import {textTransform} from './fixtures/text/text-transform';
 import {webkitTextFillColor} from './fixtures/text/webkit-text-fill-color';
+import {webkitTextStroke} from './fixtures/text/webkit-text-stroke';
 import {threeDoverflow} from './fixtures/three-d-overflow';
 import {threeDTransformOpacity} from './fixtures/three-d-transform-opacity';
 import {threeDTransformOutOfBounds} from './fixtures/three-d-transform-out-of-bounds';
@@ -110,9 +118,14 @@ export const Root: React.FC = () => {
 				<Composition {...maskImage} />
 				<Composition {...backfaceVisibilityMask} />
 				<Composition {...linearGradient} />
+				<Composition {...gradientTransparentKeyword} />
 			</Folder>
 			<Composition {...outline} />
 			<Composition {...boxShadow} />
+			<Folder name="Filter">
+				<Composition {...filter} />
+				<Composition {...filterImage} />
+			</Folder>
 			<Folder name="border">
 				<Composition {...border} />
 				<Composition {...borderRadius} />
@@ -131,12 +144,17 @@ export const Root: React.FC = () => {
 				<Composition {...paragraphs} />
 				<Composition {...letterSpacing} />
 				<Composition {...textTransform} />
+				<Composition {...fontStyle} />
+				<Composition {...fontVariantCaps} />
 				<Composition {...lineHeight} />
 				<Composition {...webkitTextFillColor} />
+				<Composition {...webkitTextStroke} />
 				<Composition {...backgroundClipText} />
 				<Composition {...backgroundClipText3dTransform} />
+				<Composition {...textShadow} />
 				<Composition {...whiteSpaceCollapsing} />
 				<Composition {...whiteSpaceCollapsing2} />
+				<Composition {...filterText} />
 			</Folder>
 			<Folder name="Projects">
 				<Composition {...unwrapped} />

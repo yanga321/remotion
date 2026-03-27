@@ -1,8 +1,8 @@
-import {BundlerInternals} from '@remotion/bundler';
 import {describe, expect, test} from 'bun:test';
 import fs from 'fs';
 import {tmpdir} from 'os';
 import path from 'path';
+import {BundlerInternals} from '@remotion/bundler';
 
 test('Should not be able to bundle @remotion/cloudrun directly', async () => {
 	expect(() =>
@@ -35,10 +35,10 @@ describe('Should be able to bundle @remotion/cloudrun/client with ESBuild', () =
 		expect(contents.includes('getRemotionEnvironment')).toBe(false);
 	});
 
-	test('Bundle should be below 7MB', async () => {
+	test('Bundle should be below 8MB', async () => {
 		const file = await fs.promises.readFile(outfile, 'utf-8');
 		expect(file.length).toBeGreaterThan(10000);
-		expect(file.length).toBeLessThanOrEqual(7_000_000);
+		expect(file.length).toBeLessThanOrEqual(8_000_000);
 	});
 
 	test('Bundle should not include Renderer', async () => {

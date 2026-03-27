@@ -1,7 +1,7 @@
-import {RenderInternals, ensureBrowser} from '@remotion/renderer';
-import {ServerlessRoutines} from '@remotion/serverless';
 import {beforeAll, expect, test} from 'bun:test';
 import path from 'path';
+import {RenderInternals, ensureBrowser} from '@remotion/renderer';
+import {ServerlessRoutines} from '@remotion/serverless';
 import {VERSION} from 'remotion/version';
 import {getWebhookCalls, resetWebhookCalls} from '../mock-implementation';
 import {mockImplementation} from '../mocks/mock-implementation';
@@ -84,6 +84,8 @@ test(
 				encodingMaxRate: null,
 				forceHeight: null,
 				forceWidth: null,
+				forceFps: null,
+				forceDurationInFrames: null,
 				rendererFunctionName: null,
 				bucketName: null,
 				audioCodec: null,
@@ -210,6 +212,8 @@ test(
 				renderId: 'abc',
 				forceHeight: null,
 				forceWidth: null,
+				forceFps: null,
+				forceDurationInFrames: null,
 				rendererFunctionName: null,
 				audioCodec: null,
 				deleteAfter: null,

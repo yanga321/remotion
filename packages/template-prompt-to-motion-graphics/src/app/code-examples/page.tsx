@@ -1,21 +1,22 @@
 "use client";
 
-import {
-  useState,
-  useCallback,
-  useMemo,
-  Suspense,
-  useEffect,
-  useRef,
-} from "react";
+import { ArrowLeft, PanelLeft, PanelLeftClose } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, PanelLeftClose, PanelLeft } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { AnimationPlayer } from "../../components/AnimationPlayer";
+import { CodeEditor } from "../../components/CodeEditor";
+import { Header } from "../../components/Header";
+import { TabPanel } from "../../components/TabPanel";
 import { examples, getExampleById } from "../../examples/code";
 import { useAnimationState } from "../../hooks/useAnimationState";
-import { CodeEditor } from "../../components/CodeEditor";
-import { AnimationPlayer } from "../../components/AnimationPlayer";
-import { Header } from "../../components/Header";
 
 function DemoPageContent() {
   const searchParams = useSearchParams();
@@ -31,7 +32,9 @@ function DemoPageContent() {
   }, [searchParams]);
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [durationInFrames, setDurationInFrames] = useState(selectedExample.durationInFrames);
+  const [durationInFrames, setDurationInFrames] = useState(
+    selectedExample.durationInFrames,
+  );
   const [fps, setFps] = useState(selectedExample.fps);
   const selectedButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -89,7 +92,9 @@ function DemoPageContent() {
           </Link>
         </div>
         <div className="h-10 w-px bg-border" />
-        <h1 className="text-sm font-medium text-muted-foreground">Example Gallery</h1>
+        <h1 className="text-sm font-medium text-muted-foreground">
+          Example Gallery
+        </h1>
       </header>
 
       {/* Main content with sidebar */}
@@ -141,8 +146,8 @@ function DemoPageContent() {
         </div>
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col min-w-0 pb-8">
-          <div className="mb-4 flex items-center gap-4">
+        <div className="flex-1 flex flex-col min-w-0 pb-8 overflow-hidden">
+          <div className="mb-4 flex items-center gap-4 shrink-0">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2 rounded-lg border border-border-dim bg-muted text-muted-foreground hover:text-foreground hover:border-border transition-colors"
@@ -164,26 +169,32 @@ function DemoPageContent() {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col lg:flex-row gap-8 overflow-auto lg:overflow-hidden">
-            <CodeEditor
-              code={code}
-              onChange={handleCodeChange}
-              isStreaming={false}
-              streamPhase="idle"
+          <div className="flex-1 min-h-0">
+            <TabPanel
+              codeContent={
+                <CodeEditor
+                  code={code}
+                  onChange={handleCodeChange}
+                  isStreaming={false}
+                  streamPhase="idle"
+                />
+              }
+              previewContent={
+                <div className="h-full max-w-4xl">
+                  <AnimationPlayer
+                    Component={Component}
+                    durationInFrames={durationInFrames}
+                    fps={fps}
+                    onDurationChange={setDurationInFrames}
+                    onFpsChange={setFps}
+                    isCompiling={isCompiling}
+                    isStreaming={false}
+                    error={error}
+                    code={code}
+                  />
+                </div>
+              }
             />
-            <div className="shrink-0 lg:shrink lg:flex-[2.5] lg:min-w-0 lg:h-full">
-              <AnimationPlayer
-                Component={Component}
-                durationInFrames={durationInFrames}
-                fps={fps}
-                onDurationChange={setDurationInFrames}
-                onFpsChange={setFps}
-                isCompiling={isCompiling}
-                isStreaming={false}
-                error={error}
-                code={code}
-              />
-            </div>
           </div>
         </div>
       </div>

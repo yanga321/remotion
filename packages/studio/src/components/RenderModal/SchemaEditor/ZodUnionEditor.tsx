@@ -1,33 +1,27 @@
-import type {z} from 'zod';
-import type {ZodType} from '../../get-zod-if-possible';
-import {useZodIfPossible} from '../../get-zod-if-possible';
+import type {AnyZodSchema} from './zod-schema-type';
+import {getUnionOptions, getZodSchemaType} from './zod-schema-type';
+import type {JSONPath} from './zod-types';
 import {ZonNonEditableValue} from './ZodNonEditableValue';
 import {ZodOrNullishEditor} from './ZodOrNullishEditor';
 import type {UpdaterFunction} from './ZodSwitch';
-import type {JSONPath} from './zod-types';
-const findNull = (
-	value: readonly [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]],
-	zodType: ZodType,
-) => {
-	const nullIndex = value.findIndex(
-		(v) =>
-			v._def.typeName === zodType.ZodFirstPartyTypeKind.ZodNull ||
-			v._def.typeName === zodType.ZodFirstPartyTypeKind.ZodUndefined,
-	);
+
+const findNull = (value: readonly AnyZodSchema[]) => {
+	const nullIndex = value.findIndex((v) => {
+		const type = getZodSchemaType(v);
+		return type === 'null' || type === 'undefined';
+	});
 	if (nullIndex === -1) {
 		return null;
 	}
 
 	const nullishValue =
-		value[nullIndex]._def.typeName === zodType.ZodFirstPartyTypeKind.ZodNull
-			? null
-			: undefined;
+		getZodSchemaType(value[nullIndex]) === 'null' ? null : undefined;
 
 	const otherSchema = value[nullIndex === 0 ? 1 : 0];
 
+	const otherType = getZodSchemaType(otherSchema);
 	const otherSchemaIsAlsoNullish =
-		otherSchema._def.typeName === zodType.ZodFirstPartyTypeKind.ZodNull ||
-		otherSchema._def.typeName === zodType.ZodFirstPartyTypeKind.ZodUndefined;
+		otherType === 'null' || otherType === 'undefined';
 
 	return {
 		nullIndex,
@@ -38,44 +32,20 @@ const findNull = (
 };
 
 export const ZodUnionEditor: React.FC<{
-	showSaveButton: boolean;
 	jsonPath: JSONPath;
 	value: unknown;
-	defaultValue: unknown;
-	schema: z.ZodTypeAny;
+	schema: AnyZodSchema;
 	setValue: UpdaterFunction<unknown>;
-	onSave: UpdaterFunction<unknown>;
 	onRemove: null | (() => void);
-	saving: boolean;
-	saveDisabledByParent: boolean;
 	mayPad: boolean;
-}> = ({
-	jsonPath,
-	schema,
-	setValue,
-	onSave,
-	defaultValue,
-	value,
-	showSaveButton,
-	onRemove,
-	saving,
-	saveDisabledByParent,
-	mayPad,
-}) => {
-	const {options} = schema._def as z.ZodUnionDef;
-
-	const z = useZodIfPossible();
-	if (!z) {
-		throw new Error('expected zod');
-	}
+}> = ({jsonPath, schema, setValue, value, onRemove, mayPad}) => {
+	const options = getUnionOptions(schema);
 
 	if (options.length > 2) {
 		return (
 			<ZonNonEditableValue
 				jsonPath={jsonPath}
 				label={'Union with more than 2 options not editable'}
-				showSaveButton={showSaveButton}
-				saving={saving}
 				mayPad={mayPad}
 			/>
 		);
@@ -86,22 +56,18 @@ export const ZodUnionEditor: React.FC<{
 			<ZonNonEditableValue
 				jsonPath={jsonPath}
 				label={'Union with less than 2 options not editable'}
-				showSaveButton={showSaveButton}
-				saving={saving}
 				mayPad={mayPad}
 			/>
 		);
 	}
 
-	const nullResult = findNull(options, z);
+	const nullResult = findNull(options);
 
 	if (!nullResult) {
 		return (
 			<ZonNonEditableValue
 				jsonPath={jsonPath}
 				label={'Union only editable with 1 value being null'}
-				showSaveButton={showSaveButton}
-				saving={saving}
 				mayPad={mayPad}
 			/>
 		);
@@ -114,8 +80,6 @@ export const ZodUnionEditor: React.FC<{
 			<ZonNonEditableValue
 				jsonPath={jsonPath}
 				label={'Not editable - both union values are nullish'}
-				showSaveButton={showSaveButton}
-				saving={saving}
 				mayPad={mayPad}
 			/>
 		);
@@ -123,18 +87,13 @@ export const ZodUnionEditor: React.FC<{
 
 	return (
 		<ZodOrNullishEditor
-			defaultValue={defaultValue}
 			jsonPath={jsonPath}
 			onRemove={onRemove}
-			onSave={onSave}
 			schema={schema}
 			innerSchema={otherSchema}
 			setValue={setValue}
-			showSaveButton={showSaveButton}
 			value={value}
 			nullishValue={nullishValue}
-			saving={saving}
-			saveDisabledByParent={saveDisabledByParent}
 			mayPad={mayPad}
 		/>
 	);
